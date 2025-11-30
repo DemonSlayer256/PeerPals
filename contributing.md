@@ -18,8 +18,6 @@ project-name/
 │   └── public/          // Public files (index.html, etc.)
 │
 ├── database/            // SQL database scripts/migrations
-├── docs/                // Documentation files
-├── tests/               // Tests for both backend and frontend
 └── CONTRIBUTING.md      // Contribution guidelines
 ```
 
