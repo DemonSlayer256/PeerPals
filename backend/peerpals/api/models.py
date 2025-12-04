@@ -5,29 +5,25 @@ from django.contrib.auth.models import User
 
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    f_name = models.CharField(max_length=50)
-    l_name = models.CharField(max_length=50)
-    roll_no = models.CharField(max_length=20)
+    name = models.CharField(max_length=50)
     branch = models.CharField(max_length=50)
     sem = models.IntegerField()
     status = models.CharField(max_length=20)
     email = models.EmailField()
+    mid = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, default=None)  
 
     def __str__(self):
-        return f"{self.f_name} {self.l_name}"
+        return f"{self.name}"
 
 class Mentor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    f_name = models.CharField(max_length=50)
-    l_name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50)
     branch = models.CharField(max_length=50)
     sem = models.IntegerField()
     contact = models.CharField(max_length=20)
-    start_roll_no = models.CharField(max_length=20)
-    end_roll_no = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.f_name} {self.l_name}"
+        return f"{self.name}"
 
 class Feedback(models.Model):
     sid = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL)
