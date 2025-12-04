@@ -1,38 +1,95 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
 
-# User serializer for basic user info
-
-class RegistrationSerializer(serializers.ModelSerializer):
+class RegistrationSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=['student', 'mentor', 'admin'])
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, write_only=True)   
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
+    name = serializers.CharField(max_length=50)
+    branch = serializers.CharField(max_length=50, required=False)
+    sem = serializers.IntegerField(required=False)
+    contact = serializers.CharField(max_length=20, required=False)  # For Mentor
+    is_staff = serializers.BooleanField(required=False, default=False)  # For Admin
 
     def validate(self, data):
-        if data['password'] < 8:
-            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        role = data.get('role')
+        if role == 'student':
+            if not data.get('branch') or not data.get('sem'):
+                raise serializers.ValidationError("Branch and semester are required for students")
+            mentor = data.get('mid')
+            if mentor and not Mentor.objects.filter(id=mentor.id).exists():
+                raise serializers.ValidationError("Mentor does not exist.")
+        elif role == 'mentor':
+            if not data.get('contact'):
+                raise serializers.ValidationError("Contact is required for mentors.")
+        elif role == 'admin':
+            # Additional validation if needed
+            pass
         return data
     
+    def validate_password(self, value):
+        if 'password_confirm' in self.initial_data:
+            if value != self.initial_data['password_confirm']:
+                raise serializers.ValidationError("Passwords do not match.")
+        validate_password(value)
+        return value
+
     def create(self, validated_data):
         role = validated_data.pop('role')
-        validated_data.pop('password_confirm', None)
-        user = User.objects.create_user(**validated_data)
+        username = validated_data.pop('username')
+        email = validated_data.pop('email')
+        password = validated_data.pop('password')
+        is_staff = False
+        is_superuser = False
+
+        if role == 'admin':
+            is_staff = True
+
+        # Create User
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            is_staff=is_staff,
+            is_superuser=is_superuser
+        )
+
         if role == 'student':
-            UserProfile.objects.create(user=user, role='student')
-        elif role == 'mentor': 
-            UserProfile.objects.create(user=user, role='mentor')
-        return user
-    
+            student = Student.objects.create(
+                user=user,
+                name=validated_data.get('name'),
+                branch=validated_data.get('branch'),
+                sem=validated_data.get('sem'),
+                status='Active',
+                email=email,
+            )
+            return student
+        
+        elif role == 'mentor':
+            mentor = Mentor.objects.create(
+                user=user,
+                name=validated_data.get('name'),
+                branch=validated_data.get('branch', ''),
+                sem=validated_data.get('sem', 0),
+                contact=validated_data.get('contact'),
+            )
+            return mentor
+        
+        elif role == 'admin':
+            # Return the user object or an admin profile if you have one
+            return user
+        
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
     def validate(self, data):
+        if not data.get('username') or not data.get('password'):
+            raise serializers.ValidationError("Username and password are required.")
         user = authenticate(username=data['username'], password=data['password'])
         if user and user.is_active:
             data['user'] = user
@@ -67,6 +124,11 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = Feedback
         fields = '__all__'
 
+    def validate(self, data):
+        # Ensure that the student exists and the mentor can give feedback to them
+        student = data.get('sid')
+        mentor = data.get('mid')
+
 # Session serializer
 class SessionSerializer(serializers.ModelSerializer):
     sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
@@ -75,3 +137,16 @@ class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = '__all__'
+
+    def validate(self, data):
+        student = data.get('sid')
+        mentor = data.get('mid')
+
+        if student and mentor:
+            # Check for conflicting sessions
+            existing_sessions = Session.objects.filter(sid=student, mid=mentor, date=data['date'])
+            if existing_sessions.exists():
+                raise serializers.ValidationError("A session with this student and mentor already exists for this date.")
+        else:
+            raise serializers.ValidationError("Both student and mentor must be provided.")
+        return data
