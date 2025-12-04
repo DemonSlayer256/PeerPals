@@ -4,6 +4,25 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
 
+class UserPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, required=True)
+    password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate_password(self, value):
+        if 'password_confirm' in self.initial_data:
+            if value != self.initial_data['password_confirm']:
+                raise serializers.ValidationError("Passwords do not match.")
+        validate_password(value)
+        return value
+    
+    def update(self, instance, validated_data):
+        password = validated_data.get('password')
+        if password:
+            instance.set_password(password)
+            instance.save()
+        return instance
+    
+
 class RegistrationSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=['student', 'mentor', 'admin'])
     username = serializers.CharField(max_length=150)
@@ -30,6 +49,8 @@ class RegistrationSerializer(serializers.Serializer):
         elif role == 'admin':
             # Additional validation if needed
             pass
+        else:
+            raise serializers.ValidationError("Invalid role specified.")
         return data
     
     def validate_password(self, value):
