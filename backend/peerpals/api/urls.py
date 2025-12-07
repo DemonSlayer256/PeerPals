@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import RegisterViewSet, StudentViewSet, MentorViewSet, FeedbackViewSet, SessionViewSet, LoginAPIView
 
 router = DefaultRouter()
@@ -13,4 +14,5 @@ urlpatterns = [
     path('', include(router.urls)),
     # Add login URL
     path('login/', LoginAPIView.as_view(), name='login'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

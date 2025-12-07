@@ -13,6 +13,11 @@ def get_user_role(user):
         return user.profile.role
     return None
 
+class IsAdminOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'DELETE':
+            return get_user_role(request.user) == 'admin'
+    
 # Custom Permissions
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -69,6 +74,7 @@ class LoginAPIView(APIView):
                 'user_data': user_data,
                 'username': user.username,
                 'role': role,
+                'is_staff': user.is_staff
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -76,7 +82,7 @@ class LoginAPIView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
-    permission_classes = [permissions.IsAuthenticated, IsSelf]
+    permission_classes = [permissions.IsAuthenticated, IsSelf, IsAdminOrReadOnly]
 
     def get_serializer_class(self):
         if self.action == 'update':
@@ -108,18 +114,20 @@ class RegisterViewSet(viewsets.ModelViewSet):
     serializer_class = RegistrationSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
-    def perform_create(self, serializer):
-        # Admins can create users and set passwords
-        if self.request.user.is_staff:
-            serializer.save()
-        else:
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_staff:
             raise PermissionDenied("Only admins can create users.")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()  # currently returns dict
+        return Response(result, status=status.HTTP_201_CREATED)
+
 
 # Student ViewSet
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsAdminOrReadOnly]
 
     def perform_create(self, serializer):
         if get_user_role(self.request.user) == 'admin':
@@ -157,7 +165,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 class MentorViewSet(viewsets.ModelViewSet):
     queryset = Mentor.objects.all()
     serializer_class = MentorSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor, IsAdminOrReadOnly]
 
     def perform_create(self, serializer):
         if get_user_role(self.request.user) == 'admin':
@@ -182,7 +190,7 @@ class MentorViewSet(viewsets.ModelViewSet):
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsAdminOrReadOnly]
 
     # No role restriction, open to all authenticated users
 
@@ -190,7 +198,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor, IsAdminOrReadOnly]
 
     def perform_create(self, serializer):
         role = get_user_role(self.request.user)
