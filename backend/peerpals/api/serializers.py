@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
 
@@ -40,6 +42,13 @@ class RegistrationSerializer(serializers.Serializer):
         if role == 'student':
             if not data.get('branch') or not data.get('sem'):
                 raise serializers.ValidationError("Branch and semester are required for students")
+            semester = None
+            try:
+                semester = int(data.get('sem'))
+            except:
+                raise serializers.ValidationError("Semesters need to be a number")
+            if semester < 1 or semester > 8:
+                raise serializers.ValidationError("Semesters should be between 1 - 8")
             mentor = data.get('mid')
             if mentor and not Mentor.objects.filter(id=mentor.id).exists():
                 raise serializers.ValidationError("Mentor does not exist.")
@@ -65,45 +74,69 @@ class RegistrationSerializer(serializers.Serializer):
         username = validated_data.pop('username')
         email = validated_data.pop('email')
         password = validated_data.pop('password')
-        is_staff = False
-        is_superuser = False
 
-        if role == 'admin':
-            is_staff = True
+        is_staff = role == 'admin'
+        is_superuser = role == 'admin'
 
-        # Create User
-        user = User.objects.create_user(
+        user = None
+        
+        # Check if user already exists
+        user
+        user, created = User.objects.get_or_create(
             username=username,
-            email=email,
-            password=password,
-            is_staff=is_staff,
-            is_superuser=is_superuser
+            defaults={
+                'email': email,
+                'is_staff': is_staff,
+                'is_superuser': is_superuser,
+            }
         )
 
-        if role == 'student':
-            student = Student.objects.create(
-                user=user,
-                name=validated_data.get('name'),
-                branch=validated_data.get('branch'),
-                sem=validated_data.get('sem'),
-                status='Active',
-                email=email,
-            )
-            return student
-        
-        elif role == 'mentor':
-            mentor = Mentor.objects.create(
-                user=user,
-                name=validated_data.get('name'),
-                branch=validated_data.get('branch', ''),
-                sem=validated_data.get('sem', 0),
-                contact=validated_data.get('contact'),
-            )
-            return mentor
-        
-        elif role == 'admin':
-            # Return the user object or an admin profile if you have one
-            return user
+        if not created:
+            # If user exists, raise error
+            raise serializers.ValidationError("This User already exists.")
+
+        else:
+            # Newly created user, set password
+            user.set_password(password)
+
+        # Create or update UserProfile
+        UserProfile.objects.create(
+            user=user,
+            role = role,
+        )
+
+        try: # Create related model based on role
+            if role == 'student':
+                student = Student.objects.create(
+                    user=user,
+                    name=validated_data.get('name'),
+                    branch=validated_data.get('branch'),
+                    sem=validated_data.get('sem'),
+                    status='Active',
+                    email=email,
+                )
+                
+                return StudentSerializer(student).data
+
+            elif role == 'mentor':
+                mentor = Mentor.objects.create(
+                    user=user,
+                    name=validated_data.get('name'),
+                    branch=validated_data.get('branch', ''),
+                    contact=validated_data.get('contact'),
+                )
+                return MentorSerializer(mentor).data
+
+            elif role == 'admin':
+                return UserSerializer(user).data
+
+        except Exception as e:
+            # Rollback user creation if necessary
+            if user and User.objects.filter(id=user.id).exists():
+                user.delete()
+            print("Registration error: ", e)
+            raise serializers.ValidationError(e)
+
         
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -125,16 +158,32 @@ class UserSerializer(serializers.ModelSerializer):
 # Student serializer
 class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = Student
         fields = '__all__'
 
+    def get_role(self, obj):
+        try:
+            return obj.user.profile.role
+        except UserProfile.DoesNotExist:
+            return None
+        
 # Mentor serializer
 class MentorSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = Mentor
         fields = '__all__'
+
+    def get_role(self, obj):
+        try:
+            return obj.user.profile.role
+        except UserProfile.DoesNotExist:
+            return None
 
 # Feedback serializer
 class FeedbackSerializer(serializers.ModelSerializer):
