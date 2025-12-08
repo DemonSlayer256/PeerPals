@@ -9,7 +9,6 @@ class Student(models.Model):
     branch = models.CharField(max_length=50)
     sem = models.IntegerField()
     status = models.CharField(max_length=20)
-    email = models.EmailField()
     mid = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, default=None)  
 
     def __str__(self):
