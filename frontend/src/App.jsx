@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import Login from './components/Login';
+import Dashboard from './pages/Dashboard';
+
 function App() {
   return(
-    <>
-      <LandingPage/>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<Dashboard/>}/>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
