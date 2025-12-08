@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from django.db import transaction
-from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
 
@@ -50,9 +48,14 @@ class RegistrationSerializer(serializers.Serializer):
             if semester < 1 or semester > 8:
                 raise serializers.ValidationError("Semesters should be between 1 - 8")
             mentor = data.get('mid')
-            if mentor and not Mentor.objects.filter(id=mentor.id).exists():
+            if not mentor or not mentor.isdigit():
+                raise serializers.ValidationError("Valid mentor ID is required for students.")
+            mentor = int(mentor)
+            if not Mentor.objects.filter(id = mentor).exists():
                 raise serializers.ValidationError("Mentor does not exist.")
         elif role == 'mentor':
+            if not data.get('branch'):
+                raise serializers.ValidationError('Branch is required for mentors.')
             if not data.get('contact'):
                 raise serializers.ValidationError("Contact is required for mentors.")
         elif role == 'admin':
@@ -113,7 +116,6 @@ class RegistrationSerializer(serializers.Serializer):
                     branch=validated_data.get('branch'),
                     sem=validated_data.get('sem'),
                     status='Active',
-                    email=email,
                 )
                 
                 return StudentSerializer(student).data
@@ -122,7 +124,7 @@ class RegistrationSerializer(serializers.Serializer):
                 mentor = Mentor.objects.create(
                     user=user,
                     name=validated_data.get('name'),
-                    branch=validated_data.get('branch', ''),
+                    branch=validated_data.get('branch'),
                     contact=validated_data.get('contact'),
                 )
                 return MentorSerializer(mentor).data
