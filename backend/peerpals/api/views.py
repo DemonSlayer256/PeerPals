@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import ValidationError
 from .models import Student, Mentor, Feedback, Session
 from .serializers import UserPasswordSerializer, RegistrationSerializer, StudentSerializer, MentorSerializer, FeedbackSerializer, SessionSerializer, LoginSerializer
 from django.contrib.auth.models import User
@@ -56,7 +57,7 @@ class LoginAPIView(APIView):
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)    
-            refresh_token = str(refresh.refresh_token)
+            refresh_token = str(refresh)
             role = get_user_role(user)
 
             user_data = {}
@@ -115,12 +116,16 @@ class RegisterViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
     def create(self, request, *args, **kwargs):
-        if not request.user.is_staff:
-            raise PermissionDenied("Only admins can create users.")
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        result = serializer.save()  # currently returns dict
-        return Response(result, status=status.HTTP_201_CREATED)
+        try:
+            serializer.validate(data = request.data)
+            serializer.is_valid(raise_exception=True)
+            result = serializer.save()  # currently returns dict
+            return Response(result, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Student ViewSet
