@@ -18,7 +18,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'DELETE':
             return get_user_role(request.user) == 'admin'
-    
+        return True
 # Custom Permissions
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -49,7 +49,7 @@ class IsSelf(permissions.BasePermission):
         return obj == request.user
 
 class LoginAPIView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.AllowAny, IsAdminOrReadOnly]
 
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -71,7 +71,6 @@ class LoginAPIView(APIView):
             return Response({
                 'access': access_token,
                 'refresh': refresh_token,
-                'user_id': user.id,
                 'user_data': user_data,
                 'username': user.username,
                 'role': role,
@@ -121,7 +120,15 @@ class RegisterViewSet(viewsets.ModelViewSet):
             serializer.validate(data = request.data)
             serializer.is_valid(raise_exception=True)
             result = serializer.save()  # currently returns dict
-            return Response(result, status=status.HTTP_201_CREATED)
+            response = { "username " : result['user']['username'],
+            "email" : result['user']['email'],
+            "role" :  result['role'],
+            "name" : result['user']['first_name'],
+            "branch" : result['branch'],
+            "sem" : result.get('sem', None),
+            "contact" : result.get('contact', None),
+            }
+            return Response(response, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
