@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=150)
     branch = models.CharField(max_length=50)
     sem = models.IntegerField()
     status = models.CharField(max_length=20)
@@ -16,7 +15,6 @@ class Student(models.Model):
 
 class Mentor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=150)
     branch = models.CharField(max_length=50)
     contact = models.CharField(max_length=20)
 
