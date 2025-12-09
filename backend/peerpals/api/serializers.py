@@ -29,9 +29,10 @@ class RegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
-    name = serializers.CharField(max_length=50)
+    name = serializers.CharField(max_length=255)
     branch = serializers.CharField(max_length=50, required=False)
     sem = serializers.IntegerField(required=False)
+    mid = serializers.CharField(required=False)  # For Student
     contact = serializers.CharField(max_length=20, required=False)  # For Mentor
     is_staff = serializers.BooleanField(required=False, default=False)  # For Admin
 
@@ -48,10 +49,12 @@ class RegistrationSerializer(serializers.Serializer):
             if semester < 1 or semester > 8:
                 raise serializers.ValidationError("Semesters should be between 1 - 8")
             mentor = data.get('mid')
-            if not mentor or not mentor.isdigit():
-                raise serializers.ValidationError("Valid mentor ID is required for students.")
-            mentor = int(mentor)
-            if not Mentor.objects.filter(id = mentor).exists():
+            if not mentor:
+                raise serializers.ValidationError(f"Valid mentor ID is required for students. You sent {mentor}")
+            mentor_user = User.objects.filter(username = mentor).first()
+            if mentor_user is None:
+                raise serializers.ValidationError("Mentor does not exist.")
+            if not Mentor.objects.filter(user = mentor_user).exists():
                 raise serializers.ValidationError("Mentor does not exist.")
         elif role == 'mentor':
             if not data.get('branch'):
@@ -88,6 +91,7 @@ class RegistrationSerializer(serializers.Serializer):
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
+                'first_name' : validated_data.pop('name'),
                 'email': email,
                 'is_staff': is_staff,
                 'is_superuser': is_superuser,
@@ -112,10 +116,10 @@ class RegistrationSerializer(serializers.Serializer):
             if role == 'student':
                 student = Student.objects.create(
                     user=user,
-                    name=validated_data.get('name'),
                     branch=validated_data.get('branch'),
                     sem=validated_data.get('sem'),
                     status='Active',
+                    mid=Mentor.objects.get(user = User.objects.get(username = validated_data.pop("mid")))
                 )
                 
                 return StudentSerializer(student).data
@@ -123,7 +127,6 @@ class RegistrationSerializer(serializers.Serializer):
             elif role == 'mentor':
                 mentor = Mentor.objects.create(
                     user=user,
-                    name=validated_data.get('name'),
                     branch=validated_data.get('branch'),
                     contact=validated_data.get('contact'),
                 )
@@ -155,7 +158,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'first_name']
 
 # Student serializer
 class StudentSerializer(serializers.ModelSerializer):
