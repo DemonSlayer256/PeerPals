@@ -1,5 +1,6 @@
 // LandingPage.jsx
 import Login from "../components/Login";
+import "../styles/landingPageStyle.css";
 
 export default function LandingPage() {
     return (
