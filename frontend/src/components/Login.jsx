@@ -9,9 +9,7 @@ export default function Login() {
     const [selectedRole, setSelectedRole] = useState('student');
     
     // 3. Make signUp an async function
-    async function signUp(e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
+    async function signUp(formData) {
         const userName = formData.get("username");
         const passWord = formData.get("password");
 
@@ -57,7 +55,7 @@ export default function Login() {
             <h3 className="login-title">Welcome Back!</h3>
             <RoleSelector selected={selectedRole} onSelect={setSelectedRole} />
             
-            <form className="login-fields" onSubmit={signUp}>
+            <form className="login-fields" action={signUp}>
                 <input
                     type="text"
                     placeholder="USN"

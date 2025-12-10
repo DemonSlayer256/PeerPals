@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './components/Dashboard';
+
 
 function App() {
   return(
