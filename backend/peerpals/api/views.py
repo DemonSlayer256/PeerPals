@@ -79,34 +79,30 @@ class LoginAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # User ViewSet
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = RegistrationSerializer
+class ChangePasswordAPI(APIView):
     permission_classes = [permissions.IsAuthenticated, IsSelf, IsAdminOrReadOnly]
 
-    def get_serializer_class(self):
-        if self.action == 'update':
-            return UserPasswordSerializer
-        return super().get_serializer_class()
+    def get_object(self):
+        return self.request.user
 
-    def perform_update(self, serializer):
+    def patch(self, request, *args, **kwargs):
         user = self.request.user
         if user != self.get_object() and not user.is_staff:
             raise PermissionDenied("You can only update your own password.")
         
+        print("Request data:", self.get_object())
         # If the user is an admin, they are only allowed to update the password during user creation
         if user.is_staff and not self.request.data.get('password', None):
             raise PermissionDenied("Admins are not allowed to change passwords after user creation.")
-        
-        serializer.save()
-        return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
-
-    def perform_create(self, serializer):
-        # Admins can create users and set their password at the time of creation
-        if self.request.user.is_staff:
-            serializer.save()
-        else:
-            raise PermissionDenied("Only admins can create users.")
+        serializer = UserPasswordSerializer(data=request.data, context={'user': self.get_object()})
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.update(user, serializer.validated_data)
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # Register ViewSet
 class RegisterViewSet(viewsets.ModelViewSet):
