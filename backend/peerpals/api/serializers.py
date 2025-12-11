@@ -95,6 +95,7 @@ class RegistrationSerializer(serializers.Serializer):
                 'email': email,
                 'is_staff': is_staff,
                 'is_superuser': is_superuser,
+                #'password': password,
             }
         )
 
@@ -105,6 +106,7 @@ class RegistrationSerializer(serializers.Serializer):
         else:
             # Newly created user, set password
             user.set_password(password)
+            user.save()
 
         # Create or update UserProfile
         UserProfile.objects.create(
@@ -158,37 +160,42 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name']
+        fields = ['username', 'email', 'first_name']
 
 # Student serializer
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    role = serializers.SerializerMethodField()
+    usn =serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    mentor_name = serializers.SerializerMethodField()
+    name = serializers.CharField(source='user.first_name', read_only=True)
+    mid = serializers.CharField(source='mid.user.username', read_only=True)
 
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = ['name', 'usn', 'branch', 'sem', 'status', 'mentor_name', 'mid',  'email']
 
-    def get_role(self, obj):
+        
+    def get_mentor_name(self, obj):
         try:
-            return obj.user.profile.role
-        except UserProfile.DoesNotExist:
+            return obj.mid.user.first_name
+        except:
+            return None
+        
+    def get_mid(self, obj):
+        try:
+            return obj.mid.user.username
+        except:
             return None
         
 # Mentor serializer
 class MentorSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    role = serializers.SerializerMethodField()
+    mid =serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    name = serializers.CharField(source='user.first_name', read_only=True)
 
     class Meta:
         model = Mentor
-        fields = '__all__'
-
-    def get_role(self, obj):
-        try:
-            return obj.user.profile.role
-        except UserProfile.DoesNotExist:
-            return None
+        fields = ['name', 'mid', 'branch', 'contact', 'email']
 
 # Feedback serializer
 class FeedbackSerializer(serializers.ModelSerializer):
