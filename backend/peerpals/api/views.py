@@ -35,7 +35,7 @@ class IsAdminOrStudentOrMentor(permissions.BasePermission):
 class IsSelf(permissions.BasePermission):
     """
     Custom permission to only allow users to edit their own data, or admins to edit any user's data.
-    Admins can only set the password during creation.
+    Admins can only set the password during creation in future but for now they can edit. 
     """
 
     def has_object_permission(self, request, view, obj):
@@ -80,20 +80,16 @@ class LoginAPIView(APIView):
 
 # User ViewSet
 class ChangePasswordAPI(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsSelf, IsAdminOrReadOnly]
-
-    def get_object(self):
-        return self.request.user
-
+    permission_classes = [permissions.IsAuthenticated]
+    
     def patch(self, request, *args, **kwargs):
         user = self.request.user
         if user != self.get_object() and not user.is_staff:
             raise PermissionDenied("You can only update your own password.")
         
-        print("Request data:", self.get_object())
-        # If the user is an admin, they are only allowed to update the password during user creation
-        if user.is_staff and not self.request.data.get('password', None):
-            raise PermissionDenied("Admins are not allowed to change passwords after user creation.")
+        # # If the user is an admin, they are only allowed to update the password
+        # if not user.is_staff and not self.request.data.get('password', None):
+        #     raise PermissionDenied("Admins are not allowed to change passwords after user creation.")
         serializer = UserPasswordSerializer(data=request.data, context={'user': self.get_object()})
         try:
             serializer.is_valid(raise_exception=True)
@@ -115,16 +111,8 @@ class RegisterViewSet(viewsets.ModelViewSet):
         try:
             serializer.validate(data = request.data)
             serializer.is_valid(raise_exception=True)
-            result = serializer.save()  # currently returns dict
-            response = { "username " : result['user']['username'],
-            "email" : result['user']['email'],
-            "role" :  result['role'],
-            "name" : result['user']['first_name'],
-            "branch" : result['branch'],
-            "sem" : result.get('sem', None),
-            "contact" : result.get('contact', None),
-            }
-            return Response(response, status=status.HTTP_201_CREATED)
+            result = serializer.save()
+            return Response(result, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -137,12 +125,6 @@ class StudentViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsAdminOrReadOnly]
 
-    def perform_create(self, serializer):
-        if get_user_role(self.request.user) == 'admin':
-            serializer.save()
-        else:
-            raise PermissionDenied("You do not have permission to add students.")
-        
     def perform_update(self, serializer):
         user = self.request.user
         role = get_user_role(user)
@@ -168,6 +150,11 @@ class StudentViewSet(viewsets.ModelViewSet):
             student = Student.objects.filter(user=self.request.user).first()
             return Student.objects.filter(id=student.id) if student else Student.objects.none()
         return Student.objects.none()
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 # Mentor ViewSet
 class MentorViewSet(viewsets.ModelViewSet):
@@ -175,11 +162,6 @@ class MentorViewSet(viewsets.ModelViewSet):
     serializer_class = MentorSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor, IsAdminOrReadOnly]
 
-    def perform_create(self, serializer):
-        if get_user_role(self.request.user) == 'admin':
-            serializer.save()
-        else:
-            raise PermissionDenied("You do not have permission to add mentors.")
 
     def perform_update(self, serializer):
         user = self.request.user

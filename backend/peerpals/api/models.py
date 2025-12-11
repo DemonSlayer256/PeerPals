@@ -11,7 +11,7 @@ class Student(models.Model):
     mid = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, default=None)  
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.user.first_name}"
 
 class Mentor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -19,7 +19,7 @@ class Mentor(models.Model):
     contact = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.user.first_name}"
 
 class Feedback(models.Model):
     sid = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL)
@@ -44,4 +44,4 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
     def __str__(self):
-        return f"{self.user.username} - {self.get_role_display()}"
+        return f"{self.user.first_name} - {self.get_role_display()}"
