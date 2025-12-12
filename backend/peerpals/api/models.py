@@ -9,6 +9,7 @@ class Student(models.Model):
     sem = models.IntegerField()
     status = models.CharField(max_length=20)
     mid = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, default=None)  
+    max_sessions = models.IntegerField(default=5)
 
     def __str__(self):
         return f"{self.user.first_name}"
@@ -29,11 +30,20 @@ class Feedback(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class Session(models.Model):
+    STATUS_CHOICES = (
+        ('accept', "Accepted"),
+        ('request', "Requested"),
+    )
     sid = models.ForeignKey(Student, on_delete=models.CASCADE)
     mid = models.ForeignKey(Mentor, on_delete=models.CASCADE)
     date = models.DateField()
-    status = models.CharField(max_length=20)  # scheduled / completed
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices = STATUS_CHOICES)  # scheduled / completed
+    anon =  models.BooleanField(default=False)
 
+    def __call__(self, *args, **kwds):
+        return f"Session on {self.date} between {self.sid.user.first_name} and {self.mid.user.first_name}"
+    
 class UserProfile(models.Model):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
