@@ -123,7 +123,7 @@ class RegisterViewSet(viewsets.ModelViewSet):
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor]
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -160,7 +160,7 @@ class StudentViewSet(viewsets.ModelViewSet):
 class MentorViewSet(viewsets.ModelViewSet):
     queryset = Mentor.objects.all()
     serializer_class = MentorSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
 
     def perform_update(self, serializer):
@@ -176,30 +176,78 @@ class MentorViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
+    def get_queryset(self):
+        role = get_user_role(self.request.user)
+
+        if role == 'admin':
+            return Mentor.objects.all()
+        elif role == 'mentor':
+            mentor = Mentor.objects.filter(user=self.request.user).first()
+            return Mentor.objects.filter(id=mentor.id) if mentor else Mentor.objects.none()
+        elif role == 'student':
+            student = Student.objects.filter(user=self.request.user).first()
+            if student and student.mid:
+                return Mentor.objects.filter(branch=student.branch)
+        return Mentor.objects.none()
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 # Feedback ViewSet
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     # No role restriction, open to all authenticated users
+    def perform_create(self, serializer):
+        role = get_user_role(self.request.user)
+        if role in ['admin', 'mentor']:
+            raise PermissionDenied("Only students can give feedback")
+        serializer.save()
 
 # Session ViewSet
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrMentor, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        role = get_user_role(self.request.user)
-        if role in ['admin', 'mentor']:
+    def create(self, request, *args, **kwargs):
+        if get_user_role(self.request.user) == 'student':
+            sent_data = self.request.data.copy()
+            student = Student.objects.get(user=self.request.user)
+            sent_data['sid'] = student.id
+            sent_data['status'] = 'request'
+            sent_data['mid'] = student.mid.id 
+            serializer = self.get_serializer(data=sent_data)
+            serializer.is_valid(raise_exception=True)
             serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)    
         else:
-            raise PermissionDenied("You do not have permission to add sessions.")
+            raise PermissionDenied("Only students can create session requests.")
         
     def perform_update(self, serializer):
-        role = get_user_role(self.request.user)
-        if role in ['admin', 'mentor']:
-            serializer.save()
-        else:
-            raise PermissionDenied("You do not have permission to update sessions.")
+        if get_user_role(self.request.user) != 'mentor':
+            raise PermissionDenied("Only mentors can update session details")
+        status = serializer.validated_data.get('status', serializer.instance.status)
+        if status == 'request':
+            raise ValidationError("Mentors cannot change status back to 'request'")
+        serializer.save()
+
+
+    def get_queryset(self):
+        user_role = get_user_role(self.request.user)
+        if user_role == 'mentor':
+            return self.queryset.filter(mid=Mentor.objects.get(user = self.request.user))
+        elif user_role == 'student':
+            return self.queryset.filter(sid=Student.objects.get(user = self.request.user))
+        elif user_role == 'admin':
+            return self.queryset.all()
+        return self.queryset.none()
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
