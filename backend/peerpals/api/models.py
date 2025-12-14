@@ -11,6 +11,20 @@ class Student(models.Model):
     mid = models.ForeignKey('Mentor', on_delete=models.SET_NULL, null=True, blank=True, default=None)  
     max_sessions = models.IntegerField(default=5)
 
+    def session_this_month(self):
+        from django.utils.timezone import now
+        today = now().date()
+        first_day = today.replace(day=1)
+        return Session.objects.filter(
+            sid=self,
+            date__gte=first_day,
+            date__month=today.month,
+            date__year=today.year
+        ).count()
+    
+    def can_create_session(self):
+        return self.session_this_month() < self.max_sessions
+    
     def __str__(self):
         return f"{self.user.first_name}"
 
@@ -33,10 +47,11 @@ class Session(models.Model):
     STATUS_CHOICES = (
         ('accept', "Accepted"),
         ('request', "Requested"),
+        ('completed', "Completed"),
     )
     sid = models.ForeignKey(Student, on_delete=models.CASCADE)
     mid = models.ForeignKey(Mentor, on_delete=models.CASCADE)
-    date = models.DateField()
+    date = models.DateField(null = True)
     description = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices = STATUS_CHOICES)  # scheduled / completed
     anon =  models.BooleanField(default=False)
