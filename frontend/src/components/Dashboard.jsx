@@ -8,14 +8,14 @@ export default function Dashboard() {
     const location = useLocation();
     const data = location.state || {
         user_id: 'S12345',
-        username: 'Alice',
+        username: 'Alice Jhonson',
         role: 'Student',
         email: 'student@example.com' 
     };
     return(
         <div className="dash-container">
             <Sidebar info={data} />
-            <DashMain info={{...data}}/>
+            <DashMain info={data}/>
         </div>
     );
 }

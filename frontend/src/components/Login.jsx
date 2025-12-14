@@ -21,6 +21,7 @@ export default function Login() {
             localStorage.setItem('accessToken', responseData.access); 
             localStorage.setItem('refreshToken', responseData.refresh); 
             localStorage.setItem('userRole', responseData.role);
+            localStorage.setItem('resposeData',responseData);
 
             responseData.role = selectedRole;//hardcoded for testing
             let dashboardPath = '/dashboard'; 
@@ -33,7 +34,7 @@ export default function Login() {
             //     dashboardPath = '/admin-dashboard';
             // }
 
-            navigate(dashboardPath, { replace: true, state: responseData }); // <-- This performs the redirect!
+            navigate(dashboardPath, { replace: true, state: responseData }); 
 
         } catch (error) {
             // Handle login failure (e.g., show an error message to the user)
