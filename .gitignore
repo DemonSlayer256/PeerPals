@@ -3,3 +3,5 @@
 /backend/peerpals/api/__pycache__/
 /backend/peerpals/api/migrations/__pycache__/
 /backend/peerpals/peerpals/__pycache__/
+script.sh
+/backend/peerpals/db.sqlite3
