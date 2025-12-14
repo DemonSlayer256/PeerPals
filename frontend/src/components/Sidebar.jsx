@@ -7,8 +7,8 @@ export default function Sidebar(props){
                 <div className="profile-icon">
                     <img src={profileIcon} alt="profile picture" className="profile-icon pic"/>
                 </div>
-                <h4 className="user-name">Alice Jhonson</h4>
-                <p className="user-role">Student</p>
+                <h4 className="user-name">{props.info.username}</h4>
+                <p className="user-role">{props.info.role}</p>
             </div>
 
             <div className="dashboard">
