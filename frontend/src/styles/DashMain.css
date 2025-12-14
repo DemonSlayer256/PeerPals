@@ -65,6 +65,12 @@
  }
 }
 
+.dash-main-left{
+ display: flex;
+ flex-direction: column;
+ width: 55%;
+ gap: 40px;
+}
 
 /* --- Content Grid Layout (Now Flexbox) --- */
 .content-grid {
@@ -88,14 +94,14 @@
 .session-list {
  display: flex;
  flex-direction: column;
- overflow-y: scroll;
+ /* overflow-y: scroll; */
  padding-bottom: 16px;
  margin-left: -8px; 
  margin-right: -8px; 
  padding-left: 8px;
  padding-right: 8px;
  gap: 16px;
- max-height: 375px;
+ max-height: fit-content;
 }
 
 .session-card {
@@ -140,17 +146,14 @@
 .session-card .join-button:hover {
  background-color: #0c4a6e; /* hover:bg-sky-800 */
 }
-.calender{
-    width: 55%;
-}
+
 .book-session-container{
-    padding-top: -10;
-    width: 35%;
+    /* padding-top: 20px; */
+    width: 60%;
 }
 
 .book-session {
  padding: 20px;
- padding-top: 0;
  display: flex;
  flex-direction: column;
  justify-content: center;
@@ -162,7 +165,7 @@
 
 .book-options{
  display: flex; 
- flex-direction: column; /* Stacking buttons vertically on small screens */
+ flex-direction: row; /* Stacking buttons vertically on small screens */
  gap: 12px; /* reduced gap */
 }
 
@@ -180,10 +183,12 @@
 
 .book-anonymously {
  background-color: #3b82f6; /* bg-blue-500 */
+ width: fit-content;
 }
 
 .book-standard {
  background-color: var(--button-bg); /* bg-sky-700 */
+ width: fit-content;
 }
 
 .book-info {
