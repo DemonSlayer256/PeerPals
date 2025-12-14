@@ -95,7 +95,6 @@ class RegistrationSerializer(serializers.Serializer):
                 'email': email,
                 'is_staff': is_staff,
                 'is_superuser': is_superuser,
-                #'password': password,
             }
         )
 
@@ -121,7 +120,7 @@ class RegistrationSerializer(serializers.Serializer):
                     branch=validated_data.get('branch'),
                     sem=validated_data.get('sem'),
                     status='Active',
-                    mid=Mentor.objects.get(user = User.objects.get(username = validated_data.pop("mid")))
+                    mid=Mentor.objects.get(user = User.objects.get(username = validated_data.pop("mid"))),
                 )
                 
                 return StudentSerializer(student).data
@@ -201,34 +200,194 @@ class MentorSerializer(serializers.ModelSerializer):
 class FeedbackSerializer(serializers.ModelSerializer):
     sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), allow_null=True)
     mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all())
+    text = serializers.CharField(max_length = 500, allow_null = True)
+    date = serializers.DateField(allow_null = True)
+    rating = serializers.IntegerField(allow_null = True)
 
     class Meta:
         model = Feedback
-        fields = '__all__'
+        fields = ['sid', 'mid', 'text', 'date', 'rating']
 
     def validate(self, data):
         # Ensure that the student exists and the mentor can give feedback to them
         student = data.get('sid')
         mentor = data.get('mid')
+        session_date = data.get('session_date')
+        if not student or not mentor:
+            raise serializers.ValidationError("Both student and mentor must be provided")
+        
+        if student.mid != mentor:
+            raise serializers.ValidationError("This student is not assigned to the specified mentor.")
+
+        existing_sessions = Session.objects.filter(sid=student, mid=mentor, date=session_date)
+        if not existing_sessions.exists():
+            raise serializers.ValidationError("Cannot give feedback on a non-existent session.")      
 
 # Session serializer
-class SessionSerializer(serializers.ModelSerializer):
-    sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all())
-    mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all())
+class SessionSerializer(serializers.Serializer):
+    sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), write_only=True)
+    mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all(), write_only=True)
+    date = serializers.DateField(required=False)
+    description = serializers.CharField(allow_blank=True, required=False)
+    status = serializers.ChoiceField(choices = ['accept', 'request','completed'])
+    anon = serializers.BooleanField(write_only=True)
+    student = serializers.SerializerMethodField()
+    mentor_name = serializers.SerializerMethodField()
 
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['mid'] = self.get_mid(instance)
+        rep['usn'] = self.get_usn(instance)
+        rep['id'] = instance.id
+        return rep
+    
+    def get_usn(self, obj):
+        try:
+            if obj.anon:
+                return "Anonymous"
+            return obj.sid.user.username
+        except:
+            return None
+        
+    def get_mentor_name(self, obj):
+        try:
+            return obj.mid.user.first_name
+        except:
+            return None
+        
+    def get_student(self, obj):
+        try:
+            if obj.anon:
+                return "Anonymous"
+            return obj.sid.user.first_name
+        except:
+            return None
+        
+    def get_mid(self, obj):
+        try:
+            return obj.mid.user.username
+        except:
+            return None
+        
     class Meta:
         model = Session
-        fields = '__all__'
+        fields = ['id', 'student', 'mentor_name', 'date', 'description', 'status']
 
-    def validate(self, data):
-        student = data.get('sid')
-        mentor = data.get('mid')
+    def validate(self, attrs):
+        from datetime import date, timedelta, datetime
+        instance = getattr(self, 'instance', None)
 
-        if student and mentor:
-            # Check for conflicting sessions
-            existing_sessions = Session.objects.filter(sid=student, mid=mentor, date=data['date'])
-            if existing_sessions.exists():
-                raise serializers.ValidationError("A session with this student and mentor already exists for this date.")
-        else:
-            raise serializers.ValidationError("Both student and mentor must be provided.")
-        return data
+        student = attrs.get('sid') or getattr(instance, 'sid', None)
+        mentor = attrs.get('mid') or getattr(instance, 'mid', None)
+        session_date = attrs.get('date')
+
+        # Normalize session_date to a date object if datetime
+        if isinstance(session_date, datetime):
+            session_date = session_date.date()
+
+        # -------------------------
+        # PATCH: only date rules
+        # -------------------------
+        if instance:
+            if session_date:
+                limit_date = date.today() + timedelta(days=30)
+                if session_date > limit_date:
+                    raise serializers.ValidationError(
+                        "The session date cannot be more than one month from today."
+                    )
+            return attrs
+
+        # -------------------------
+        # POST: full validation
+        # -------------------------
+        if student.mid != mentor:
+            raise serializers.ValidationError(
+                "This student is not assigned to the specified mentor."
+            )
+
+        # Monthly session limit check
+        if not student.can_create_session():
+            raise serializers.ValidationError(
+                f"Student has reached the maximum of {student.max_sessions_per_month} sessions this month."
+            )
+
+        # Duplicate session check for the date
+        existing_sessions = Session.objects.filter(
+            sid=student,
+            mid=mentor,
+            date=session_date
+        )
+
+        if existing_sessions.exists():
+            if existing_sessions.filter(status__in=['accept', 'completed']).exists():
+                raise serializers.ValidationError(
+                    "A session with this student and mentor already exists for this date."
+                )
+            else:
+                raise serializers.ValidationError(
+                    "A session request has already been made with this mentor."
+                )
+
+        # Date limit
+        limit_date = date.today() + timedelta(days=30)
+        if session_date > limit_date:
+            raise serializers.ValidationError(
+                "The session date cannot be more than one month from today."
+            )
+
+        return attrs
+
+    def validate_status(self, new_status):
+
+        instance = getattr(self, 'instance', None)
+
+        # POST
+        if not instance:
+            if new_status != 'request':
+                raise serializers.ValidationError(
+                    "New sessions must start with status 'request'."
+                )
+            return new_status
+
+        # PATCH
+        current_status = instance.status
+
+        # Terminal state
+        if current_status == 'completed':
+            raise serializers.ValidationError(
+                "Completed sessions cannot be modified."
+            )
+
+        allowed_transitions = {
+            'request': ['accept'],
+            'accept': ['completed'],
+        }
+
+        if new_status != current_status:
+            if new_status not in allowed_transitions.get(current_status, []):
+                raise serializers.ValidationError(
+                    f"Invalid status transition: {current_status} → {new_status}"
+                )
+
+        return new_status
+
+    
+    def create(self, validated_data):
+        # Use the passed Student and Mentor objects directly
+        sid = validated_data.pop('sid')
+        mid = validated_data.pop('mid')
+        description = validated_data.get('description')
+
+        
+        # Create the session, assuming you have a 'Session' model
+        session = Session.objects.create(sid=sid, mid=mid, description=description, status=validated_data.get('status'), anon=validated_data.get('anon'))
+        sid.max_sessions -= 1
+        sid.save()
+        return session
+    
+    def update(self, instance, validated_data):
+        print(instance.status, validated_data.get('status'))
+        instance.status = validated_data.get('status', instance.status)
+        instance.date = validated_data.get('date', instance.date)
+        instance.save()
+        return instance
