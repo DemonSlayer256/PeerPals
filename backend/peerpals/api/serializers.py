@@ -197,31 +197,50 @@ class MentorSerializer(serializers.ModelSerializer):
         fields = ['name', 'mid', 'branch', 'contact', 'email']
 
 # Feedback serializer
+from rest_framework import serializers
+from .models import Feedback, Student, Mentor, Session
+
 class FeedbackSerializer(serializers.ModelSerializer):
-    sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), allow_null=True)
+    sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), write_only=True)
     mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all())
-    text = serializers.CharField(max_length = 500, allow_null = True)
-    date = serializers.DateField(allow_null = True)
-    rating = serializers.IntegerField(allow_null = True)
+    text = serializers.CharField(max_length=500, allow_null=True)
+    date = serializers.DateField()
+    rating = serializers.IntegerField(min_value = 1, max_value = 5, allow_null=True)
+    anon = serializers.BooleanField(write_only=True)
 
     class Meta:
         model = Feedback
-        fields = ['sid', 'mid', 'text', 'date', 'rating']
+        fields = ['sid', 'mid', 'text', 'date', 'rating', 'anon']
+
+
+    def to_representation(self, instance):
+        # This method customizes the representation of the instance
+        representation = super().to_representation(instance)
+
+        # Add additional fields for read operations
+        representation['student'] = "Anonymous" if instance.anon else instance.sid.user.first_name if instance.sid else None
+        representation['usn'] = "Anonymous" if instance.anon else instance.sid.user.username if instance.sid else None
+        representation['mentor_name'] = instance.mid.user.first_name if instance.mid else None
+        representation['mid'] = instance.mid.user.username
+
+        return representation
 
     def validate(self, data):
-        # Ensure that the student exists and the mentor can give feedback to them
         student = data.get('sid')
         mentor = data.get('mid')
-        session_date = data.get('session_date')
-        if not student or not mentor:
-            raise serializers.ValidationError("Both student and mentor must be provided")
-        
-        if student.mid != mentor:
-            raise serializers.ValidationError("This student is not assigned to the specified mentor.")
+        session_date = data.get('date')  # Corrected to use 'date' as it is in the fields
 
-        existing_sessions = Session.objects.filter(sid=student, mid=mentor, date=session_date)
-        if not existing_sessions.exists():
-            raise serializers.ValidationError("Cannot give feedback on a non-existent session.")      
+        if not all([student, mentor]):
+            raise serializers.ValidationError("Both student and mentor must be provided")
+
+        if not Session.objects.filter(sid=student, mid=mentor, date=session_date).exists():
+            raise serializers.ValidationError("Cannot give feedback on a non-existent session.")
+        
+        if Feedback.objects.filter(sid = student, mid = mentor, date = session_date).exists():
+            raise serializers.ValidationError("Already provided feedback")
+        
+        return data
+
 
 # Session serializer
 class SessionSerializer(serializers.Serializer):
@@ -285,9 +304,6 @@ class SessionSerializer(serializers.Serializer):
         if isinstance(session_date, datetime):
             session_date = session_date.date()
 
-        # -------------------------
-        # PATCH: only date rules
-        # -------------------------
         if instance:
             if session_date:
                 limit_date = date.today() + timedelta(days=30)
@@ -297,9 +313,6 @@ class SessionSerializer(serializers.Serializer):
                     )
             return attrs
 
-        # -------------------------
-        # POST: full validation
-        # -------------------------
         if student.mid != mentor:
             raise serializers.ValidationError(
                 "This student is not assigned to the specified mentor."
@@ -327,13 +340,6 @@ class SessionSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     "A session request has already been made with this mentor."
                 )
-
-        # Date limit
-        limit_date = date.today() + timedelta(days=30)
-        if session_date > limit_date:
-            raise serializers.ValidationError(
-                "The session date cannot be more than one month from today."
-            )
 
         return attrs
 

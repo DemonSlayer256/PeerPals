@@ -202,11 +202,34 @@ class FeedbackViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
 
     # No role restriction, open to all authenticated users
-    def perform_create(self, serializer):
+    def create(self, serializer):
         role = get_user_role(self.request.user)
         if role in ['admin', 'mentor']:
             raise PermissionDenied("Only students can give feedback")
+        sent_data = self.request.data.copy()
+        student = Student.objects.get(user=self.request.user)
+        sent_data['sid'] = student.id
+        sent_data['mid'] = student.mid.id
+        serializer = self.get_serializer(data=sent_data)
+        serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)  
+
+    def get_queryset(self):
+        user_role = get_user_role(self.request.user)
+        if user_role == 'mentor':
+            return self.queryset.filter(mid=Mentor.objects.get(user = self.request.user))
+        elif user_role == 'student':
+            return self.queryset.filter(sid=Student.objects.get(user = self.request.user))
+        elif user_role == 'admin':
+            return self.queryset.all()
+        return self.queryset.none()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
 
 # Session ViewSet
 class SessionViewSet(viewsets.ModelViewSet):

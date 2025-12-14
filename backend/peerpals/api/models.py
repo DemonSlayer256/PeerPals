@@ -38,10 +38,11 @@ class Mentor(models.Model):
 
 class Feedback(models.Model):
     sid = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL)
-    mid = models.ForeignKey(Mentor, on_delete=models.CASCADE)
-    text = models.TextField()
-    rating = models.IntegerField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    mid = models.ForeignKey(Mentor, on_delete=models.CASCADE, null=True, blank=True)
+    text = models.TextField(null=True, blank=True)
+    date = models.DateField(null=True, blank=True)
+    rating = models.IntegerField(null=True, blank=True)
+    anon = models.BooleanField(null = True)
 
 class Session(models.Model):
     STATUS_CHOICES = (
