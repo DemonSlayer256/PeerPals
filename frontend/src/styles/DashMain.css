@@ -149,11 +149,12 @@
 
 .book-session-container{
     /* padding-top: 20px; */
-    width: 60%;
+    width: 100%;
 }
 
 .book-session {
  padding: 20px;
+ padding-top: 40px;
  display: flex;
  flex-direction: column;
  justify-content: center;
