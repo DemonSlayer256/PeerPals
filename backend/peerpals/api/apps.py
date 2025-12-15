@@ -7,4 +7,5 @@ class ApiConfig(AppConfig):
     verbose_name = "PeerPals API"
 
     def ready(self):
-        import api.signals
+        # import api.signals
+        pass

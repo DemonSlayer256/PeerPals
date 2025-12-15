@@ -1,0 +1,145 @@
+/* --- Color Palette Matching the Dashboard Image (White/Light Blue) --- */
+:root {
+    --color-primary: #03045E; 
+    --primary-blue: #0ea5e9; /* Sky-500 for main accent */
+    --active-bg: #f0f9ff; /* Sky-50 for active background */
+    --text-dark: #1f2937; /* Gray-800 for main text */
+    --text-muted: #9ca3af; /* Gray-400 for headings/roles */
+    --border-color: #e5e7eb; /* Gray-200 for separators */
+    --profile-ring-color: #bae6fd; /* Sky-300 for profile ring */
+}
+.dash-container{
+    display: flex;
+    background-color: #fff;
+}
+/* --- Sidebar (Left Panel) --- */
+.sidebar {
+    min-width: 20%;
+    background-color: white; /* White background matching the image */
+    padding: 35px 20px; /* Similar to p-6 lg:p-4 */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: 1px 0 5px rgba(0, 0, 0, 0.05); /* Subtle shadow on the right edge */
+}
+
+/* --- Profile Card --- */
+.profile-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 30px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-card .profile-icon {
+    width: 100px; /* Adjust size */
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 8px;
+    /* border: 3px solid var(--profile-ring-color); Subtle light blue ring */
+}
+
+.pic{
+    width: 100%;
+    border: 3px solid var(--primary-blue);
+}
+
+.user-name {
+    font-size: 1.5rem; /* text-lg */
+    font-weight: 600; /* semibold */
+    color: var(--text-dark);
+}
+
+.user-role {
+    font-size: 0.875rem; /* text-sm */
+    color: var(--text-muted);
+}
+
+/* --- Navigation & Functions --- */
+
+/* Base style for all list items/nav blocks */
+/* .dash-functions{
+    padding-left: 2px;
+} */
+.dash-functions ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.dash-functions li, .dashboard {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px; /* Sufficient padding for touch targets */
+    margin-bottom: 4px;
+    cursor: pointer;
+    border-radius: 8px; /* Rounded corners for modern look */
+    transition: background-color 0.15s, color 0.15s;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.dash-functions li:hover, .dashboard:hover {
+    background-color: var(--active-bg);
+    color: var(--primary-blue);
+}
+
+/* Active Dashboard Link Styling (Assumes the dashboard div is the active one) */
+.dashboard {
+    background-color: var(--active-bg);
+    color: var(--primary-blue);
+    font-weight: 600;
+    margin-bottom: 16px; /* Separates it from the next section */
+    /* Icon styling will need to be applied to the <i> tag */
+}
+
+.dashboard i {
+    font-size: 18px;
+    margin-right: 12px;
+}
+
+.dash-functions li i {
+    font-size: 16px;
+    margin-right: 12px;
+    color: var(--primary-blue); /* Icons inside lists */
+}
+
+/* Section Headings (Activities, Account Settings) */
+.dash-setting {
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 700; /* bold */
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 10px 12px 5px;
+    margin-top: 15px;
+}
+
+/* Logout button styling */
+.dash-functions button {
+    background: var(--color-primary);
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: 500;
+    transition: background-color 0.15s;
+    margin-top: 10px;
+}
+
+.dash-functions button:hover {
+    background-color: var(--active-bg);
+    color: var(--primary-blue);
+}
+
+.welcome-card{
+    padding: 20px;
+}
