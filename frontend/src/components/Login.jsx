@@ -12,18 +12,19 @@ export default function Login() {
 
         const postData = {
             username : userName,
-            password : passWord
+            password : passWord,
+            requested_role : selectedRole
         };
 
         try {
-            let responseData = await sendPostReq(postData);
-
+            let responseData = await sendPostReq(postData,'http://localhost:8000/api/login/');
+            const resData = JSON.stringify(responseData);
             localStorage.setItem('accessToken', responseData.access); 
             localStorage.setItem('refreshToken', responseData.refresh); 
             localStorage.setItem('userRole', responseData.role);
-            localStorage.setItem('resposeData',responseData);
+            localStorage.setItem('resposeData',resData);
 
-            responseData.role = selectedRole;//hardcoded for testing
+            // responseData.role = selectedRole;//hardcoded for testing
             let dashboardPath = '/dashboard'; 
             
             // if (role === 'student') {

@@ -1,13 +1,14 @@
-import profileIcon from "../images/profile-icon.jpg" 
+import profileIcon from "../images/profile-icon.jpg";
+import logout from '../utils/logout';
 
 export default function Sidebar(props){
     return(
         <div className="sidebar">
             <div className="profile-card">
                 <div className="profile-icon">
-                    <img src={profileIcon} alt="profile picture" className="profile-icon pic"/>
+                    <img src={profileIcon} alt="profile" className="profile-icon pic"/>
                 </div>
-                <h4 className="user-name">{props.info.username}</h4>
+                <h4 className="user-name">{props.info.first_name+" "+props.info.last_name}</h4>
                 <p className="user-role">{props.info.role}</p>
             </div>
 
@@ -20,12 +21,12 @@ export default function Sidebar(props){
                 <ul>
                     <li>Sessions Calender</li>
                     <li>Upcoming Sessions</li>
-                    <li>Book a Session</li>
+                    {props.info.role==='mentor'?" ":<li>Book a Session</li>}
                 </ul>
                 <h2 className="dash-setting">Account settings</h2>
                 <ul>
                     <li>Personal info</li>
-                    <button>Logout</button>
+                    <button onClick={logout}>Logout</button>
                 </ul>
             </div>
         </div>
