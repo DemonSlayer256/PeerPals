@@ -3,12 +3,15 @@ import DashImg from "../images/dash-img.jpg"
 import Calender from './Calender';
 import sendGetReq from '../utils/sendGetReq';
 import HandleRequest from './Handlerequest';
+import sendPostReq from '../utils/sendPostReq';
 // Mock Data structure kept for logical content mapping
 const MOCK_SESSIONS = [
     { id: 1, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" },
     { id: 2, title: "Intro to React Hooks Workshop", date: "13/12/2025", time: "10:00am", mentor: "Carla" },
     { id: 3, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" }
 ];
+
+const access=localStorage.getItem('accessToken');
 
 async function getData()
 {
@@ -17,17 +20,19 @@ async function getData()
     if(access){
         const userinfo = await sendGetReq('http://localhost:8000/api/students/',access);
         const sessions = await sendGetReq('http://localhost:8000/api/sessions/',access)
-        console.log(userinfo,sessions)
-        return sessions;
+        console.log("session obj",sessions[0])
+        return sessions[0];
     }
-    else{
-        alert("Session Expired! Please login again");
-    }
+
+}
+
+function requestSession(requestType)
+{
+    const session = sendPostReq(requestType,'http://localhost:8000/api/sessions/',access);
+    console.log("requested session!")
 }
 
 export default function DashMain(props) {
-    // const userName = "Alice"; 
-    //console.log(props.info);
     const data =  getData();
     console.log(data);
     return(
@@ -58,10 +63,10 @@ export default function DashMain(props) {
                         <h3 className="section-title">Book a Session</h3>
                         <div className="book-session">
                             <div className="book-options">
-                                <div className="book-anonymously">
+                                <div className="book-anonymously" onClick={()=>{requestSession({annon:true})}}>
                                     Book Anonymously
                                 </div>
-                                <div className="book-standard">
+                                <div className="book-standard" onClick={()=>{requestSession({annon:false})}}>
                                     Book Standard Session
                                 </div>
                             </div>

@@ -1,7 +1,7 @@
 // sendPostReq.js (The Fix)
 
 // Add an optional parameter for the token
-async function sendPostReq(postData, url, accessToken = null) {
+async function sendPostReq(postData, url, accessToken) {
     
     // Start with base headers
     const headers = {
