@@ -2,7 +2,7 @@ import '../styles/DashMain.css';
 import DashImg from "../images/dash-img.jpg"
 import Calender from './Calender';
 import sendGetReq from '../utils/sendGetReq';
-
+import HandleRequest from './Handlerequest';
 // Mock Data structure kept for logical content mapping
 const MOCK_SESSIONS = [
     { id: 1, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" },
@@ -18,7 +18,7 @@ async function getData()
         const userinfo = await sendGetReq('http://localhost:8000/api/students/',access);
         const sessions = await sendGetReq('http://localhost:8000/api/sessions/',access)
         console.log(userinfo,sessions)
-        return userinfo;
+        return sessions;
     }
     else{
         alert("Session Expired! Please login again");
@@ -54,7 +54,7 @@ export default function DashMain(props) {
                         <Calender/>
                     </div>
 
-                    {props.info.role==='mentor'?" ":<div className="book-session-container" id='book-session'>
+                    {props.info.role==='mentor'?<HandleRequest sessions={data} />:<div className="book-session-container" id='book-session'>
                         <h3 className="section-title">Book a Session</h3>
                         <div className="book-session">
                             <div className="book-options">
