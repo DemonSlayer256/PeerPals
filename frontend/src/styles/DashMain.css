@@ -236,3 +236,88 @@
 .card-books { background-color: #ef4444; }
 .card-videos { background-color: #3b82f6; }
 .card-courses { background-color: #a855f7; } /* purple-500 */
+
+/* --- Styles for HandleRequest Component (Mentor View) --- */
+
+.approve-requests-container {
+    /* Use the same styling as the book-session-container */
+    width: 100%;
+}
+
+.approve-requests-card {
+    /* Base card styling, similar to book-session or session-card */
+    padding: 20px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* shadow-md */
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Spacing between details */
+}
+
+.approve-requests-card h4 {
+    /* Main title within the card */
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.request-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.request-detail-row p {
+    font-size: 0.9375rem; /* Slightly larger than small text */
+    color: var(--text-dark);
+}
+
+.request-detail-row .detail-label {
+    font-weight: 600;
+    color: var(--welcome-text-accent);
+}
+
+/* --- Action Buttons Container --- */
+.request-actions {
+    display: flex;
+    gap: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 10px;
+}
+
+/* Base button style for Approve/Decline */
+.request-actions button {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+/* Approve Button (Primary color) */
+.approve-button {
+    background-color: #10b981; /* bg-emerald-500 */
+    color: white;
+}
+
+.approve-button:hover {
+    background-color: #059669; /* bg-emerald-600 */
+}
+
+/* Decline Button (Secondary/Danger color) */
+.decline-button {
+    background-color: #f87171; /* bg-red-400 */
+    color: white;
+}
+
+.decline-button:hover {
+    background-color: #ef4444; /* bg-red-500 */
+}
