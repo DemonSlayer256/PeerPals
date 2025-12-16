@@ -4,6 +4,8 @@ import Calender from './Calender';
 import sendGetReq from '../utils/sendGetReq';
 import HandleRequest from './Handlerequest';
 import sendPostReq from '../utils/sendPostReq';
+import { useState,useEffect } from 'react';
+
 // Mock Data structure kept for logical content mapping
 const MOCK_SESSIONS = [
     { id: 1, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" },
@@ -11,14 +13,13 @@ const MOCK_SESSIONS = [
     { id: 3, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" }
 ];
 
-const access=localStorage.getItem('accessToken');
-
 async function getData()
 {
     const access=localStorage.getItem('accessToken');
+    const userRole = localStorage.getItem('userRole')
     console.log("tokens from local storage",access);
     if(access){
-        const userinfo = await sendGetReq('http://localhost:8000/api/students/',access);
+        // const userinfo = await sendGetReq('http://localhost:8000/api/students/',access);
         const sessions = await sendGetReq('http://localhost:8000/api/sessions/',access)
         console.log("session obj",sessions[0])
         return sessions[0];
@@ -26,15 +27,39 @@ async function getData()
 
 }
 
-function requestSession(requestType)
-{
-    const session = sendPostReq(requestType,'http://localhost:8000/api/sessions/',access);
-    console.log("requested session!")
-}
+ function requestSession(requestType)
+    {
+        const access=localStorage.getItem('accessToken');
+        const session = sendPostReq(requestType,'http://localhost:8000/api/sessions/',access);
+        console.log("requested session!")
+    }
 
 export default function DashMain(props) {
-    const data =  getData();
-    console.log(data);
+    const [sessionsData, setSessionsData] = useState(null); 
+    // isLoading tracks if the data is being fetched (initially true).
+    const [isLoading, setIsLoading] = useState(true); 
+
+    // 3. Use useEffect for the Side Effect (Data Fetching)
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Wait for the data fetch
+                const fetchedData = await getData();
+                
+                // Store the result in state, which triggers a re-render
+                setSessionsData(fetchedData); 
+            } catch (err) {
+                console.error("Error fetching sessions data:", err);
+                // Handle error state if needed
+            } finally {
+                // Set loading to false once the operation is complete (success or failure)
+                setIsLoading(false); 
+            }
+        };
+
+        fetchData(); // Execute the inner async function
+    },[]); // 4. Dependency Array: [] means this runs only once on mount.
+
     return(
         <div className="dash-main"> 
             <div className="welcome-card">
@@ -59,14 +84,14 @@ export default function DashMain(props) {
                         <Calender/>
                     </div>
 
-                    {props.info.role==='mentor'?<HandleRequest sessions={data} />:<div className="book-session-container" id='book-session'>
+                    {props.info.role==='mentor'?<HandleRequest sessions={sessionsData} />:<div className="book-session-container" id='book-session'>
                         <h3 className="section-title">Book a Session</h3>
                         <div className="book-session">
                             <div className="book-options">
-                                <div className="book-anonymously" onClick={()=>{requestSession({annon:true})}}>
+                                <div className="book-anonymously" onClick={()=>{requestSession({anon:true})}}>
                                     Book Anonymously
                                 </div>
-                                <div className="book-standard" onClick={()=>{requestSession({annon:false})}}>
+                                <div className="book-standard" onClick={()=>{requestSession({anon:false})}}>
                                     Book Standard Session
                                 </div>
                             </div>
