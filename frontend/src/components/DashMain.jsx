@@ -85,7 +85,7 @@ export default function DashMain(props) {
                 <div className="dash-main-left">
                     <div className="calender">
                         <h3 className="calendar-title">Session Calendar</h3>
-                        <Calender />
+                        <Calender sessions={sessionsData}/>
                     </div>
 
                     {props.info.role === 'mentor' ? (
