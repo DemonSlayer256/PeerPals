@@ -61,6 +61,11 @@ export default function DashMain(props) {
         console.log("retrieved sessions in effects",sessionsData);
     },[]); // 4. Dependency Array: [] means this runs only once on mount.
     console.log("retrieved sessions",sessionsData);
+
+    const removeApprovedSession = (id) => {
+        setSessionsData(prevSessions => prevSessions.filter(item => item.id !== id));
+    };
+
     return(
         <div className="dash-main"> 
             <div className="welcome-card">
@@ -85,7 +90,31 @@ export default function DashMain(props) {
                         <Calender/>
                     </div>
 
-                    {!sessionsData?"":props.info.role==='mentor'?sessionsData.map((session) =><HandleRequest sessions={session} />):<div className="book-session-container" id='book-session'>
+                    {!sessionsData?"":props.info.role==='mentor'?
+                        // Inside DashMain.jsx, where you render the scroll container
+                    <div className="approve-requests-section">
+                        <h3 className="section-title">Approve Requests</h3>
+                        
+                        <div className="requests-scroll-container">
+                            {/* Filter the data first to see what's actually left to show */}
+                            {sessionsData && sessionsData.filter(s => s.status !== 'accept').length > 0 ? (
+                                sessionsData
+                                    .filter(s => s.status !== 'accept')
+                                    .map((session) => (
+                                        <HandleRequest 
+                                            key={session.id} 
+                                            sessions={session} 
+                                            onApprovalSuccess={removeApprovedSession} 
+                                        />
+                                    ))
+                            ) : (
+                                /* This message shows only when the filtered list is empty */
+                                <div className="approve-requests-card empty-state">
+                                    <p>No new requests available.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>:<div className="book-session-container" id='book-session'>
                         <h3 className="section-title">Book a Session</h3>
                         <div className="book-session">
                             <div className="book-options">
@@ -110,7 +139,7 @@ export default function DashMain(props) {
                     <p>No sessions available</p>
                     ) : (
                     <div className="session-list">
-                        {sessionsData.map((session) => (
+                        {sessionsData.filter(s => s.status === 'accept').map((session) => (
                         <div key={session.id} className="session-card">
                             <div className="session-header">
                             <span className="session-time">{session.description}</span>

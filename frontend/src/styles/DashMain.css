@@ -251,8 +251,7 @@
     background-color: var(--card-bg);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* shadow-md */
     display: flex;
-    flex-direction: column;
-    gap: 12px; /* Spacing between details */
+    /* gap: 12px; Spacing between details */
 }
 
 .approve-requests-card h4 {
@@ -264,6 +263,35 @@
     border-bottom: 2px solid var(--border-color);
     padding-bottom: 8px;
 }
+
+/* The container holding all the HandleRequest components */
+.requests-scroll-container {
+    display: flex;
+    flex-direction: row; /* Align cards side-by-side */
+    gap: 20px;
+    overflow-x: auto;    /* Enable horizontal scroll */
+    padding: 10px 5px;   /* Space for shadows */
+    /* scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; Smooth scroll for mobile */
+}
+
+/* Make sure the individual cards have a fixed minimum width */
+.approve-requests-container {
+    flex: 0 0 350px; /* Do not grow, do not shrink, start at 350px */
+    max-width: 400px;
+}
+
+/* Fix the card style to stack content vertically again */
+.approve-requests-card {
+    padding: 20px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 
 .request-detail-row {
     display: flex;
@@ -325,4 +353,12 @@
 .setDate{
     display: flex;
     gap: 5px;
+}
+
+.approve-requests-card.empty-state {
+    width: 100%;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    border: 1px dashed var(--border-color); /* Makes it look like an empty slot */
 }

@@ -20,10 +20,20 @@ export default function HandleRequest(props) {
 
         console.log("Sending data:", pathData);
         const access=localStorage.getItem('accessToken');
-        sendPatchReq(`http://localhost:8000/api/sessions/${pathData.id}/`,pathData,access)
+       try {
+            // Wait for the server to confirm
+            await sendPatchReq(`http://localhost:8000/api/sessions/${pathData.id}/`, pathData, access);
+            
+            // Call the parent function to remove the card from the UI
+            props.onApprovalSuccess(session.id); 
+            
+        } catch (error) {
+            console.error("Update failed:", error);
+            alert("Could not approve session. Please try again.");
+        }
     }
     
-    if (!props.sessions) {
+    if (!props.sessions || props.sessions.length === 0) {
         return (
             <div className="approve-requests-container">
                 <h3 className="section-title">Approve Requests</h3>
@@ -33,13 +43,8 @@ export default function HandleRequest(props) {
             </div>
         );
     }
-
-    
-
     return (
         <div className="approve-requests-container">
-            <h3 className="section-title">Approve Request</h3>
-            
             <div className="approve-requests-card">
                 <h4>Session Request: {session.id || 'Untitled Session'}</h4>
                 <div className="request-detail-row">
@@ -55,7 +60,6 @@ export default function HandleRequest(props) {
                 <div className="request-detail-row">
                     <p className="detail-label">Requested Date:</p>
                     <div className="setDate">
-                        <label htmlFor="date">Set Date:</label>
                         <input type="date" id='date'value={selectedDate} 
                             onChange={(e) => setSelectedDate(e.target.value)}/>
                     </div>
