@@ -46,7 +46,7 @@ export default function HandleRequest(props) {
     return (
         <div className="approve-requests-container">
             <div className="approve-requests-card">
-                <h4>Session Request: {session.id || 'Untitled Session'}</h4>
+                <h4>Session Request: {session.description || 'Untitled Session'}</h4>
                 <div className="request-detail-row">
                     <p className="detail-label">Student Name:</p>
                     <p>{session.student || 'N/A'}</p>
