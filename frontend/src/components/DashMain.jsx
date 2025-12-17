@@ -7,11 +7,11 @@ import sendPostReq from '../utils/sendPostReq';
 import { useState,useEffect } from 'react';
 
 // Mock Data structure kept for logical content mapping
-const MOCK_SESSIONS = [
-    { id: 1, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" },
-    { id: 2, title: "Intro to React Hooks Workshop", date: "13/12/2025", time: "10:00am", mentor: "Carla" },
-    { id: 3, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" }
-];
+// const MOCK_SESSIONS = [
+//     { id: 1, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" },
+//     { id: 2, title: "Intro to React Hooks Workshop", date: "13/12/2025", time: "10:00am", mentor: "Carla" },
+//     { id: 3, title: "DSA Review", date: "12/12/2025", time: "8:00pm", mentor: "Bob" }
+// ];
 
 async function getData()
 {
@@ -21,8 +21,8 @@ async function getData()
     if(access){
         // const userinfo = await sendGetReq('http://localhost:8000/api/students/',access);
         const sessions = await sendGetReq('http://localhost:8000/api/sessions/',access)
-        console.log("session obj",sessions[0])
-        return sessions[0];
+        console.log("session obj",sessions)
+        return sessions;
     }
 
 }
@@ -57,9 +57,10 @@ export default function DashMain(props) {
             }
         };
 
-        fetchData(); // Execute the inner async function
+         fetchData(); // Execute the inner async function
+        console.log("retrieved sessions in effects",sessionsData);
     },[]); // 4. Dependency Array: [] means this runs only once on mount.
-
+    console.log("retrieved sessions",sessionsData);
     return(
         <div className="dash-main"> 
             <div className="welcome-card">
@@ -84,7 +85,7 @@ export default function DashMain(props) {
                         <Calender/>
                     </div>
 
-                    {props.info.role==='mentor'?<HandleRequest sessions={sessionsData} />:<div className="book-session-container" id='book-session'>
+                    {!sessionsData?"":props.info.role==='mentor'?sessionsData.map((session) =><HandleRequest sessions={session} />):<div className="book-session-container" id='book-session'>
                         <h3 className="section-title">Book a Session</h3>
                         <div className="book-session">
                             <div className="book-options">
@@ -105,21 +106,25 @@ export default function DashMain(props) {
                 <div className="upcoming-sessions-container">
                     <h3 className="section-title">Upcoming Sessions</h3>
 
+                    {(sessionsData === null || sessionsData.length === 0) ? (
+                    <p>No sessions available</p>
+                    ) : (
                     <div className="session-list">
-                        {MOCK_SESSIONS.map(session => (
-                            <div key={session.id} className="session-card">
-                                <div className="session-header">
-                                    <span className="session-time">{session.time}</span>
-                                    <span className="session-date">{session.date}</span>
-                                </div>
-                                <h4>{session.title}</h4>
-                                <p className="session-mentor">Mentor: {session.mentor}</p>
-                                <button className="join-button">
-                                    Join Session
-                                </button>
+                        {sessionsData.map((session) => (
+                        <div key={session.id} className="session-card">
+                            <div className="session-header">
+                            <span className="session-time">{session.description}</span>
+                            <span className="session-date">{session.date}</span>
                             </div>
-                        ))}
-                    </div>
+                            <h4>{session.description}</h4>
+                            <p className="session-mentor">Mentor: {session.mentor_name}</p>
+                            <button className="join-button">
+                            Join Session
+                            </button>
+                        </div>
+                    ))}
+                </div>
+)}
                 </div>
 
             </div>

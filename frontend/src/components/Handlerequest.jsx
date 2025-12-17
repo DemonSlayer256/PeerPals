@@ -1,13 +1,28 @@
-// HandleRequest.jsx (MODIFIED)
+import sendPatchReq from '../utils/sendPatchReq';
+import { useState } from 'react';
 
 export default function HandleRequest(props) {
-    // function setStatus() {
-    //     // NOTE: This currently only updates the local props object, not the backend!
-    //     props.sessions.status = 'approved';
-    //     console.log("Session status updated locally:", props.sessions.status);
-    // }
+
+    const [selectedDate, setSelectedDate] = useState("");
+    const session = props.sessions;
+    console.log("sessions in handleRequest",session)
+    async function setDate() {
+        if (!selectedDate) {
+            alert("Please select a date first!");
+            return;
+        }
+
+        const pathData = {
+            id:session.id,
+            status: 'accept',
+            date: selectedDate 
+        };
+
+        console.log("Sending data:", pathData);
+        const access=localStorage.getItem('accessToken');
+        sendPatchReq(`http://localhost:8000/api/sessions/${pathData.id}/`,pathData,access)
+    }
     
-    // Safety check in case sessions is null while loading (though handled in DashMain)
     if (!props.sessions) {
         return (
             <div className="approve-requests-container">
@@ -19,19 +34,14 @@ export default function HandleRequest(props) {
         );
     }
 
-    // Deconstruct session data for clearer rendering
-    const session = props.sessions;
+    
 
     return (
         <div className="approve-requests-container">
-            <h3 className="section-title">Approve Requests</h3>
+            <h3 className="section-title">Approve Request</h3>
             
             <div className="approve-requests-card">
-                
-                {/* Request Header/Title */}
-                <h4>Session Request: {session.description || 'Untitled Session'}</h4>
-                
-                {/* Details */}
+                <h4>Session Request: {session.id || 'Untitled Session'}</h4>
                 <div className="request-detail-row">
                     <p className="detail-label">Student Name:</p>
                     <p>{session.student || 'N/A'}</p>
@@ -44,18 +54,19 @@ export default function HandleRequest(props) {
                 
                 <div className="request-detail-row">
                     <p className="detail-label">Requested Date:</p>
-                    <p>{session.date || 'TBD'}</p>
+                    <div className="setDate">
+                        <label htmlFor="date">Set Date:</label>
+                        <input type="date" id='date'value={selectedDate} 
+                            onChange={(e) => setSelectedDate(e.target.value)}/>
+                    </div>
                 </div>
 
                 <div className="request-detail-row">
                     <p className="detail-label">Type:</p>
-                    {/* Add logic to check if session is anonymous */}
                     <p>{session.student === 'Anonymous' ? 'Anonymous' : 'Standard'}</p>
                 </div>
-
-                {/* Buttons */}
                 <div className="request-actions">
-                    <button  className="approve-button">
+                    <button  className="approve-button" onClick={setDate}>
                         Approve and Set date
                     </button>
                     {/* <button className="decline-button">
