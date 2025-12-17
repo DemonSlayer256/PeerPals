@@ -321,3 +321,8 @@
 .decline-button:hover {
     background-color: #ef4444; /* bg-red-500 */
 }
+
+.setDate{
+    display: flex;
+    gap: 5px;
+}
