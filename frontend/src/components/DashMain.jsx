@@ -87,7 +87,8 @@ export default function DashMain(props) {
                     </div>
                 </div>
 
-                <div className="admin-session-container">
+                <div className="dash-admin">
+                     <div className="admin-session-container">
                             <h3 className="section-title">Register a User</h3>
                             <div className="admin-session">
                                 <div className="admin-options">
@@ -99,6 +100,23 @@ export default function DashMain(props) {
                                     </div>
                                 </div>
                             </div>
+                </div>
+                <div className="upcoming-sessions-container">
+                    <h3 className="section-title">Upcoming Sessions</h3>
+                    <div className="session-list">
+                        {sessionsData?.filter(s => s.status === 'accept').map(session => (
+                            <div key={session.id} className="session-card">
+                                <h4>{session.description}</h4>
+                                <p className="session-mentor">Session Type : {session.student !== 'Anonymous'?'Standard':'Anonymous'}</p>
+                                <p className="session-mentor">Name : {session.student !== 'Anonymous'?session.student:'Anonymous'}</p>
+                                <p className="session-mentor">Date : {session.date}</p>
+                                <p className="session-mentor">Description : {session.description? session.description:"General Advice"}</p>
+                                <p className="session-mentor">Mentor: {session.mentor_name}</p>
+                                <button className="join-button">Join Session</button>
+                            </div>
+                        )) || <p>No upcoming sessions.</p>}
+                    </div>
+                </div>
                 </div>
             </div>
             
