@@ -6,19 +6,15 @@ import { useState } from 'react';
 import DashMain from './DashMain';
 import ProfileModal from './ProfileModal'; 
 import ChangePasswordModal from './ChangePasswordModal';
+import RegisterUserModal from './RegisterUserModal';
 
 export default function Dashboard() {
     const location = useLocation();
-    const data = location.state || {
-        user_id: 'S12345',
-        username: 'Alice Johnson',
-        role: 'Student',
-        email: 'student@example.com' 
-    };
+    const data = location.state;
     console.log("user data",data)
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isChangePassOpen, setIsChangePassOpen] = useState(false);
-
+    const [registerType, setRegisterType] = useState(null);
 
     return(
         <div className="dash-container">
@@ -28,7 +24,15 @@ export default function Dashboard() {
                 onChangePassClick={() => setIsChangePassOpen(true)}
             />
             
-            <DashMain info={data}/>
+            <DashMain info={data} onRegisterClick={(type) => setRegisterType(type)}/>
+
+            {registerType && (
+                <RegisterUserModal 
+                    type={registerType} 
+                    onClose={() => setRegisterType(null)} 
+                />
+            )}
+
             {isProfileModalOpen && (
                 <ProfileModal 
                     info={data} 

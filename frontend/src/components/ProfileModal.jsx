@@ -4,11 +4,11 @@ import React, { useState } from 'react';
 export default function ProfileModal({ info, onClose }) {
     // Local state for the form inputs
     const [formData, setFormData] = useState({
-        first_name: info.first_name || "",
-        last_name: info.last_name || "",
-        email: info.user_data.email || "",
-        branch: info.user_data.branch || "CS",
-        sem: info.user_data.sem || "5",
+        first_name: info.first_name,
+        last_name: info.last_name,
+        email: info.user_data.email,
+        branch: info.user_data.branch,
+        sem: info.user_data.sem,
         mentor:info.user_data.mentor_name
     });
 
