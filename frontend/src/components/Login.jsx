@@ -27,8 +27,8 @@ export default function Login() {
             // responseData.role = selectedRole;//hardcoded for testing
             let dashboardPath = '/dashboard'; 
             
-            // if (role === 'student') {
-            //     dashboardPath = '/student-dashboard';
+            if (responseData.role === 'admin') {
+                dashboardPath = '/admin-dashboard';}
             // } else if (role === 'mentor') {
             //     dashboardPath = '/mentor-dashboard';
             // } else if (role === 'admin') {
