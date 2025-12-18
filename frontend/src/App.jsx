@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage'; // Assuming this holds your Login
 import Dashboard from './components/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute'; // <-- IMPORT THE NEW COMPONENT
 import HandleRequest from './components/Handlerequest';
+import AdminDash from './pages/AdminDash';
 
 function App() {
   return(
@@ -15,6 +16,7 @@ function App() {
         {/* Wrap protected routes */}
         <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard/>}/>
+            <Route path="/admin-dashboard" element={<AdminDash/>}/>
             <Route path="/approverequests" element={<HandleRequest/>}/>
         </Route>
 
