@@ -152,36 +152,62 @@
     width: 100%;
 }
 
+.admin-session-container{
+    width: 40%;
+}
+
 .book-session {
  padding: 20px;
  padding-top: 40px;
  display: flex;
- flex-direction: column;
  justify-content: center;
- height: auto; /* Changed from fixed 160px to auto for better flow */
+ height: auto;
  border-radius: 12px;
  background-color: var(--card-bg);
- box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* shadow-md */
+ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+.admin-session{
+    padding: 20px;
+    padding-top: 40px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    height: auto; 
+    width: auto;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* shadow-md */
 }
 
+.admin-options{
+    display: flex;
+    gap: 12px; /* reduced gap */
+}
 .book-options{
  display: flex; 
- flex-direction: row; /* Stacking buttons vertically on small screens */
+ flex-direction: column; /* Stacking buttons vertically on small screens */
  gap: 12px; /* reduced gap */
 }
 
-.book-options > div {
+.book-options > div,.book-options >div>div, .admin-options>div{
+    display: flex;
     flex-grow: 1; /* Ensure buttons take equal space */
- padding: 12px;
- margin-bottom: 0; /* Removed margin */
- text-align: center;
- border-radius: 8px;
- font-weight: 600;
- color: white;
- cursor: pointer;
- transition: background-color 0.2s;
+    gap: 5px;
+    padding: 12px;
+    margin-bottom: 0; /* Removed margin */
+    text-align: center;
+    border-radius: 8px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-
+.book-options > p{
+    padding-left: 12px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
 .book-anonymously {
  background-color: #3b82f6; /* bg-blue-500 */
  width: fit-content;
@@ -198,44 +224,6 @@
  text-align: center; 
  margin-top: 16px;
 }
-
-/* --- Resources/Recommendations --- */
-.resources-container{
- width: auto; /* Removed fixed width to span full grid */
-}
-.resource-cards {
- display: grid;
- grid-template-columns: repeat(1, 1fr); /* Default 1 column */
- gap: 20px;
- margin-top: 16px;
-}
-@media (min-width: 640px) {
- .resource-cards {
- grid-template-columns: repeat(3, 1fr); 
- }
-}
-
-.resource-card {
- display: flex;
- align-items: center;
- justify-content: center;
- height: 112px; /* h-28 */
- border-radius: 12px;
- color: white;
- font-size: 1.25rem;
- font-weight: 700;
- box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
- cursor: pointer;
- transition: transform 0.2s;
-}
-
-.resource-card:hover {
- transform: scale(1.02);
-}
-
-.card-books { background-color: #ef4444; }
-.card-videos { background-color: #3b82f6; }
-.card-courses { background-color: #a855f7; } /* purple-500 */
 
 /* --- Styles for HandleRequest Component (Mentor View) --- */
 

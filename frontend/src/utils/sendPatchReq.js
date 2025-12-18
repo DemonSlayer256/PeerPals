@@ -10,6 +10,7 @@ export default async function sendPatchReq(url, updatedData,accessToken){
         });
 
         if (!response.ok) {
+            console.log(response.errors)
             throw new Error(`Error: ${response.status}`);
         }
 

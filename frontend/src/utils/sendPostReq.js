@@ -1,3 +1,6 @@
+import logout from "./logout"; 
+import refreshAccessToken from './refreshAccessToken';
+
 async function sendPostReq(postData, url, accessToken) {
     const headers = {
         'Content-Type': 'application/json',
@@ -13,11 +16,33 @@ async function sendPostReq(postData, url, accessToken) {
     };
 
     try {
-        const response = await fetch(url, requestOptions);
+        let response = await fetch(url, requestOptions);
         if (response.status === 401) {
-            const errorData = await response.json(); 
-            throw new Error(`Login failed with status 401. Details: ${JSON.stringify(errorData)}`);
+        console.warn("Access token expired. Attempting refresh...");
+        try {
+            const newAccessToken = await refreshAccessToken();
+            const retryHeaders = {
+                ...headers,
+                'Authorization': `Bearer ${newAccessToken}`
+            };
+            
+            const retryOptions = {
+                ...requestOptions,
+                headers: retryHeaders
+            };
+
+            response = await fetch(url, retryOptions);
+            if (response.ok) {
+                console.log("Original request succeeded after token refresh.");
+            } else if (response.status === 401) {
+                console.error("Request failed even after token refresh. Logging out.");
+                logout();
+                throw new Error("Authentication failed permanently.");
+            }
+        } catch (error) {
+            throw error; 
         }
+    }
 
         if (!response.ok) {
              const errorData = await response.json(); 
