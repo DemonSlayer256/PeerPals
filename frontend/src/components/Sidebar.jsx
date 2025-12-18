@@ -2,6 +2,38 @@ import profileIcon from "../images/profile-icon.jpg";
 import logout from '../utils/logout';
 
 export default function Sidebar(props){
+    console.log(props.info.role)
+    if(props.info.role === 'admin')
+    {
+        return(<div className="sidebar">
+                        <div className="profile-card">
+                            <div className="profile-icon">
+                                <img src={profileIcon} alt="profile" className="profile-icon pic"/>
+                            </div>
+                            <h4 className="user-name">{props.info.first_name+" "+props.info.last_name}</h4>
+                            <p className="user-role">{props.info.role}</p>
+                        </div>
+            
+                        <div className="dashboard">
+                            <i className="fa-regular fa-house"></i>
+                            <p>Dashboard</p>
+                        </div>
+                        <div className="dash-functions">
+                            <h2 className="dash-setting">Activities</h2>
+                            <ul>
+                                <li>Register a User</li>
+                                <li>Assign a Mentor</li>
+                                <li>Manage Sessions</li>
+                            </ul>
+                            <h2 className="dash-setting">Account settings</h2>
+                            <ul>
+                                <li onClick={props.onProfileClick} style={{cursor: 'pointer'}}>Personal info</li>
+                                <li onClick={props.onChangePassClick} style={{cursor: 'pointer'}}>Change Password</li>
+                                <button onClick={logout}>Logout</button>
+                            </ul>
+                        </div>
+            </div>)
+    }
     return(
         <div className="sidebar">
             <div className="profile-card">
@@ -21,11 +53,12 @@ export default function Sidebar(props){
                 <ul>
                     <li>Sessions Calender</li>
                     <li>Upcoming Sessions</li>
-                    {props.info.role==='mentor'?" ":<li>Book a Session</li>}
+                    {props.info.role==='mentor'?<li>Approve Requests</li>:<li>Book a Session</li>}
                 </ul>
                 <h2 className="dash-setting">Account settings</h2>
                 <ul>
-                    <li>Personal info</li>
+                    <li onClick={props.onProfileClick} style={{cursor: 'pointer'}}>Personal info</li>
+                    <li onClick={props.onChangePassClick} style={{cursor: 'pointer'}}>Change Password</li>
                     <button onClick={logout}>Logout</button>
                 </ul>
             </div>

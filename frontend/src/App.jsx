@@ -1,9 +1,7 @@
-// App.jsx (MODIFIED)
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage'; // Assuming this holds your Login component
+import LandingPage from './pages/LandingPage'; 
 import Dashboard from './components/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute'; // <-- IMPORT THE NEW COMPONENT
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return(
@@ -15,8 +13,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard/>}/>
         </Route>
-        
-        {/* Optional: Add a catch-all route to redirect users to the landing/login page */}
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
