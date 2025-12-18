@@ -1,33 +1,48 @@
-// sendPostReq.js (The Fix)
+import logout from "./logout"; 
+import refreshAccessToken from './refreshAccessToken';
 
-// Add an optional parameter for the token
-async function sendPostReq(postData, url, accessToken = null) {
-    
-    // Start with base headers
+async function sendPostReq(postData, url, accessToken) {
     const headers = {
         'Content-Type': 'application/json',
     };
-
-    // **CRITICAL FIX: Attach the Authorization header if a token is provided**
     if (accessToken) {
-        // Use the Bearer scheme expected by Django REST Framework (Simple JWT)
         headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
     const requestOptions = {
         method: 'POST',
-        headers: headers, // Use the updated headers object
+        headers: headers, 
         body: JSON.stringify(postData)
     };
 
     try {
-        const response = await fetch(url, requestOptions);
-        
-        // Handle 401 specifically for debugging
+        let response = await fetch(url, requestOptions);
         if (response.status === 401) {
-            const errorData = await response.json(); 
-            throw new Error(`Login failed with status 401. Details: ${JSON.stringify(errorData)}`);
+        console.warn("Access token expired. Attempting refresh...");
+        try {
+            const newAccessToken = await refreshAccessToken();
+            const retryHeaders = {
+                ...headers,
+                'Authorization': `Bearer ${newAccessToken}`
+            };
+            
+            const retryOptions = {
+                ...requestOptions,
+                headers: retryHeaders
+            };
+
+            response = await fetch(url, retryOptions);
+            if (response.ok) {
+                console.log("Original request succeeded after token refresh.");
+            } else if (response.status === 401) {
+                console.error("Request failed even after token refresh. Logging out.");
+                logout();
+                throw new Error("Authentication failed permanently.");
+            }
+        } catch (error) {
+            throw error; 
         }
+    }
 
         if (!response.ok) {
              const errorData = await response.json(); 
