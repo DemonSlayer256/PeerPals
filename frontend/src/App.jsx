@@ -1,11 +1,7 @@
-// App.jsx (MODIFIED)
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage'; // Assuming this holds your Login component
+import LandingPage from './pages/LandingPage'; 
 import Dashboard from './components/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute'; // <-- IMPORT THE NEW COMPONENT
-import HandleRequest from './components/Handlerequest';
-import AdminDash from './pages/AdminDash';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return(
@@ -16,8 +12,6 @@ function App() {
         {/* Wrap protected routes */}
         <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard/>}/>
-            <Route path="/admin-dashboard" element={<AdminDash/>}/>
-            <Route path="/approverequests" element={<HandleRequest/>}/>
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
