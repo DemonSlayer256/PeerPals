@@ -5,21 +5,21 @@ export default function ChangePasswordModal({ onClose }) {
     const [passwords, setPasswords] = useState({
         old_password: "",
         new_password: "",
-        confirm_password: ""
+        password_confirm: ""
     });
     const [error, setError] = useState("");
 
     const handleSubmit = async () => {
         // 1. Basic Validation
-        if (passwords.new_password !== passwords.confirm_password) {
+        if (passwords.new_password !== passwords.password_confirm) {
             setError("New passwords do not match!");
             return;
         }
 
         const access = localStorage.getItem('accessToken');
         const data = {
-            old_password: passwords.old_password,
-            new_password: passwords.new_password
+            password: passwords.new_password,
+            password_confirm: passwords.password_confirm
         };
 
         try {
@@ -63,8 +63,8 @@ export default function ChangePasswordModal({ onClose }) {
                         <label>Confirm New Password</label>
                         <input 
                             type="password" 
-                            value={passwords.confirm_password}
-                            onChange={(e) => setPasswords({...passwords, confirm_password: e.target.value})}
+                            value={passwords.password_confirm}
+                            onChange={(e) => setPasswords({...passwords, password_confirm: e.target.value})}
                         />
                     </div>
                 </div>

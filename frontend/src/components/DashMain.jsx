@@ -66,7 +66,44 @@ export default function DashMain(props) {
         return <div className="dash-main">Loading Dashboard Data...</div>;
     }
 
-    // 5. Main Render
+    if(props.info.role === 'admin')
+    {
+        const openRegisterStudent = () => {
+            props.onRegisterClick("student"); 
+        };
+
+        const openRegisterMentor = () => {
+            props.onRegisterClick("mentor");
+        };
+        return(
+            <div className="dash-main">
+                <div className="welcome-card">
+                    <div className="welcome-text">
+                        <h2>Welcome Back, {props.info.first_name || "User"}!</h2>
+                        <p>Manage users and their data here.</p>
+                    </div>
+                    <div className="welcome-illustration">
+                        <img src={DashImg} alt="welcome" />
+                    </div>
+                </div>
+
+                <div className="admin-session-container">
+                            <h3 className="section-title">Register a User</h3>
+                            <div className="admin-session">
+                                <div className="admin-options">
+                                    <div className="book-anonymously" onClick={() => openRegisterStudent()}>
+                                        New Student
+                                    </div>
+                                    <div className="book-standard" onClick={() => openRegisterMentor()}>
+                                        New Mentor
+                                    </div>
+                                </div>
+                            </div>
+                </div>
+            </div>
+            
+        )
+    }
     return (
         <div className="dash-main">
             {/* --- Welcome Banner --- */}
@@ -108,8 +145,11 @@ export default function DashMain(props) {
                             <h3 className="section-title">Book a Session</h3>
                             <div className="book-session">
                                 <div className="book-options">
-                                    <div className="book-anonymously" onClick={() => openBookingForm(true)}>Book Anonymously</div>
-                                    <div className="book-standard" onClick={() => openBookingForm(false)}>Book Standard</div>
+                                    <div>
+                                        <div className="book-anonymously" onClick={() => openBookingForm(true)}>Book Anonymously</div>
+                                        <div className="book-standard" onClick={() => openBookingForm(false)}>Book Standard</div>
+                                    </div>
+                                    <p>Want a quick advice secretly? Try Anonymous booking!</p>
                                 </div>
                             </div>
                         </div>
