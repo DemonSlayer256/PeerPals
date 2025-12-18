@@ -102,3 +102,11 @@
 .calendar-day.has-event:hover {
     background-color: #bae6fd; /* hover:bg-sky-200 */
 }
+/* 
+.event-dot {
+    width: 4px;
+    height: 4px;
+    background-color: var(--button-bg);
+    border-radius: 50%;
+    margin: 2px auto 0;
+} */

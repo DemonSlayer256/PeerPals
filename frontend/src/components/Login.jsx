@@ -24,21 +24,10 @@ export default function Login() {
             localStorage.setItem('userRole', responseData.role);
             localStorage.setItem('resposeData',resData);
 
-            // responseData.role = selectedRole;//hardcoded for testing
             let dashboardPath = '/dashboard'; 
-            
-            // if (role === 'student') {
-            //     dashboardPath = '/student-dashboard';
-            // } else if (role === 'mentor') {
-            //     dashboardPath = '/mentor-dashboard';
-            // } else if (role === 'admin') {
-            //     dashboardPath = '/admin-dashboard';
-            // }
-
             navigate(dashboardPath, { replace: true, state: responseData }); 
 
         } catch (error) {
-            // Handle login failure (e.g., show an error message to the user)
             console.error("Login failed:", error);
             alert("Login failed. Please check your credentials.");
         }
