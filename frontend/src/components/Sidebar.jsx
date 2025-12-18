@@ -21,11 +21,12 @@ export default function Sidebar(props){
                 <ul>
                     <li>Sessions Calender</li>
                     <li>Upcoming Sessions</li>
-                    {props.info.role==='mentor'?" ":<li>Book a Session</li>}
+                    {props.info.role==='mentor'?<li>Approve Requests</li>:<li>Book a Session</li>}
                 </ul>
                 <h2 className="dash-setting">Account settings</h2>
                 <ul>
-                    <li>Personal info</li>
+                    <li onClick={props.onProfileClick} style={{cursor: 'pointer'}}>Personal info</li>
+                    <li onClick={props.onChangePassClick} style={{cursor: 'pointer'}}>Change Password</li>
                     <button onClick={logout}>Logout</button>
                 </ul>
             </div>
