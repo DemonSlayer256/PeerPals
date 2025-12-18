@@ -90,23 +90,23 @@ class ChangePasswordAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def patch(self, request, *args, **kwargs):
-        user = self.request.user
-        if user != self.get_object() and not user.is_staff:
+        user_req = self.request.user
+        uid = user_req.id
+        user = User.objects.get(id=uid)
+        if user.is_staff:
             raise PermissionDenied("You can only update your own password.")
-        
-        # # If the user is an admin, they are only allowed to update the password
-        # if not user.is_staff and not self.request.data.get('password', None):
-        #     raise PermissionDenied("Admins are not allowed to change passwords after user creation.")
-        serializer = UserPasswordSerializer(data=request.data, context={'user': self.get_object()})
+        serializer = UserPasswordSerializer(data=request.data, context={'user': user})
         try:
             serializer.is_valid(raise_exception=True)
             serializer.update(user, serializer.validated_data)
             return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
         except ValidationError as e:
+            print(e)
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print(e)
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+        
 # Register ViewSet
 class RegisterViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
