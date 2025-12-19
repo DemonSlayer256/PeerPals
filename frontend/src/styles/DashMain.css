@@ -73,7 +73,7 @@
 }
 .dash-admin-left{
  display: flex;
- flex-direction: column;
+ /* flex-direction: column; */
  /* width: 55%; */
  gap: 40px;
  width: 100%;
@@ -191,7 +191,9 @@
 .admin-mentor{
     flex-direction: column;
 }
-
+.assign-mentor{
+    width: 100%;
+}
 .admin-mentor>p{
     margin-top: 12px;
     font-size: 0.875rem;
@@ -202,18 +204,25 @@
     display: flex;
     gap: 12px;
 }
+
+.admin-session>p{
+    margin-top: 12px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
 .book-options{
  display: flex; 
+ width: 100%;
  flex-direction: column; /* Stacking buttons vertically on small screens */
- gap: 12px; /* reduced gap */
+ gap: 15px; /* reduced gap */
 }
 
 .book-options > div,.book-options >div>div, .admin-options>div,.admin-mentor>div{
     display: flex;
     flex-grow: 1; /* Ensure buttons take equal space */
-    gap: 5px;
+    gap: 15px;
     padding: 12px;
-    margin-bottom: 0; /* Removed margin */
     text-align: center;
     border-radius: 8px;
     font-weight: 600;
