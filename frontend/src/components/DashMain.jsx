@@ -100,6 +100,7 @@ export default function DashMain(props) {
                                             New Mentor
                                         </div>
                                     </div>
+                                    <p>Register a new user</p>
                                 </div>
                         </div>
 
@@ -107,7 +108,7 @@ export default function DashMain(props) {
                                 <h3 className="section-title">Assign a Mentor</h3>
                                 <div className="admin-session">
                                     <div className="admin-mentor">
-                                        <div className="book-anonymously" onClick={() => openRegisterStudent()}>
+                                        <div className="book-anonymously assign-mentor" onClick={() => openRegisterStudent()}>
                                             Assign mentor
                                         </div>
                                         <p>Assign or change the mentor of a student</p>
