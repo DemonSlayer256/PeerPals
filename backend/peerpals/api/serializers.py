@@ -87,7 +87,6 @@ class RegistrationSerializer(serializers.Serializer):
         user = None
         
         # Check if user already exists
-        user
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
