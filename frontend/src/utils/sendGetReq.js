@@ -1,23 +1,18 @@
 import logout from "./logout"; 
 import refreshAccessToken from './refreshAccessToken';
 
-async function sendPostReq(postData, url, accessToken) {
+async function sendGetReq(url, accessToken) {
     const headers = {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
     };
-    if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-    }
 
     const requestOptions = {
-        method: 'POST',
-        headers: headers, 
-        body: JSON.stringify(postData)
+        method: 'GET',
+        headers: headers,
     };
-
-    try {
-        let response = await fetch(url, requestOptions);
-        if (response.status === 401) {
+    let response = await fetch(url, requestOptions);
+    if (response.status === 401) {
         console.warn("Access token expired. Attempting refresh...");
         try {
             const newAccessToken = await refreshAccessToken();
@@ -44,19 +39,13 @@ async function sendPostReq(postData, url, accessToken) {
         }
     }
 
-        if (!response.ok) {
-             const errorData = await response.json(); 
-             throw new Error(`Request failed with status ${response.status}. Details: ${JSON.stringify(errorData)}`);
-        }
-        
-        const data = await response.json();
-        console.log('Success:', data);
-        return data;
-
-    } catch (error) {
-        console.error('Error during fetch:', error);
-        throw error;
+    if (!response.ok) {
+        const errorDetails = await response.json().catch(() => ({})); 
+        throw new Error(`Request failed with status ${response.status}. Details: ${JSON.stringify(errorDetails)}`);
     }
+
+    const data = await response.json();
+    return data;
 }
 
-export default sendPostReq;
+export default sendGetReq;

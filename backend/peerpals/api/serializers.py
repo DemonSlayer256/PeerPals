@@ -321,7 +321,7 @@ class SessionSerializer(serializers.Serializer):
         # Monthly session limit check
         if not student.can_create_session():
             raise serializers.ValidationError(
-                f"Student has reached the maximum of {student.max_sessions_per_month} sessions this month."
+                f"Student has reached the maximum of {student.max_sessions} sessions this month."
             )
 
         # Duplicate session check for the date

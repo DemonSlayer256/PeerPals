@@ -60,6 +60,11 @@ class LoginAPIView(APIView):
             access_token = str(refresh.access_token)    
             refresh_token = str(refresh)
             role = get_user_role(user)
+            requested_role = request.data.get('requested_role')
+
+            if role != requested_role:
+                error_message = f"Login restricted: Please sign in as a {role.capitalize()}."
+                return Response({'detail': error_message}, status=status.HTTP_401_UNAUTHORIZED)
 
             user_data = {}
             if role == 'student':
@@ -74,6 +79,8 @@ class LoginAPIView(APIView):
                 'refresh': refresh_token,
                 'user_data': user_data,
                 'username': user.username,
+                'first_name': user.first_name, # <-- ADD THIS LINE
+                'last_name': user.last_name,
                 'role': role,
                 'is_staff': user.is_staff
             }, status=status.HTTP_200_OK)
@@ -86,13 +93,9 @@ class ChangePasswordAPI(APIView):
     def patch(self, request, *args, **kwargs):
         user_req = self.request.user
         uid = user_req.id
-        user = User.objects.get(id = uid)
-        # if user.is_staff:
-        #     raise PermissionDenied("You can only update your own password.")
-        
-        # # If the user is an admin, they are only allowed to update the password
-        # if not user.is_staff and not self.request.data.get('password', None):
-        #     raise PermissionDenied("Admins are not allowed to change passwords after user creation.")
+        user = User.objects.get(id=uid)
+        if user.is_staff:
+            raise PermissionDenied("You can only update your own password.")
         serializer = UserPasswordSerializer(data=request.data, context={'user': user})
         try:
             serializer.is_valid(raise_exception=True)
@@ -102,7 +105,7 @@ class ChangePasswordAPI(APIView):
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+        
 # Register ViewSet
 class RegisterViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -156,6 +159,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        print(f"DEBUG: Queryset Count is {queryset.count()}")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
