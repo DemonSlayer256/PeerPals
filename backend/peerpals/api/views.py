@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from .models import Student, Mentor, Feedback, Session
 from .serializers import UserPasswordSerializer, RegistrationSerializer, StudentSerializer, MentorSerializer, FeedbackSerializer, SessionSerializer, LoginSerializer
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 
 # Utility function to get user role
 def get_user_role(user): 
@@ -101,10 +102,8 @@ class ChangePasswordAPI(APIView):
             serializer.update(user, serializer.validated_data)
             return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
         except ValidationError as e:
-            print(e)
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            print(e)
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 # Register ViewSet
