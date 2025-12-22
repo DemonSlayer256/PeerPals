@@ -4,3 +4,4 @@
 /backend/peerpals/peerpals/__pycache__/
 script.sh
 /backend/peerpals/db.sqlite3
+.venv
