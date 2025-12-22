@@ -51,16 +51,10 @@ export default function DashMain(props) {
             description: sessionDescription
         };
         
-        try{
-            await sendPostReq(postData, 'http://localhost:8000/api/sessions/', access);
-            setIsModalOpen(false);
-            setSessionDescription("");
-            alert("Session requested successfully!");
-        }
-        catch(err)
-        {
-            return (<div>{err}</div>)
-        }
+        await sendPostReq(postData, 'http://localhost:8000/api/sessions/', access);
+        setIsModalOpen(false);
+        setSessionDescription("");
+        alert("Session requested successfully!");
     };
 
     const removeApprovedSession = (id) => {
