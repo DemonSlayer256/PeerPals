@@ -121,9 +121,26 @@ git push origin feature/your-username/feature-description
 ``` 
 
 ### 9. Create a Pull Request
+#### Command Line Method
+To create a pull request using the command line, follow these steps:
 
-Go to the main repository and open a pull request (PR) from your branch.
+1. First, ensure you are on your feature branch:
+   git checkout your-feature-branch
 
-### Code of Conduct
+2. Push your branch to the main repository:
+   git push origin your-feature-branch
 
-Please adhere to our project's code of conduct while interacting with others.
+3. After that, use the following command to create a pull request:
+   git request-pull origin/main origin/your-feature-branch
+
+Note: This will output a summary that you can copy to initiate the PR on GitHub.
+
+#### GUI Method
+
+To create a pull request using a graphical interface (e.g., GitHub):
+
+1. Open your web browser and go to the main repository on GitHub.
+2. You should see a notification suggesting you create a pull request for your recently pushed branch.
+3. Click on the "Compare & pull request" button.
+4. Fill in the pull request title and description.
+5. Click the "Create pull request" button to submit your PR.
