@@ -8,7 +8,7 @@ from .models import Student, Mentor, Feedback, Session
 from .serializers import UserPasswordSerializer, RegistrationSerializer, StudentSerializer, MentorSerializer, FeedbackSerializer, SessionSerializer, LoginSerializer
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
-
+from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 # Utility function to get user role
 def get_user_role(user): 
     if hasattr(user, 'profile'):
@@ -61,7 +61,6 @@ class LoginAPIView(APIView):
             refresh_token = str(refresh)
             role = get_user_role(user)
             requested_role = request.data.get('requested_role')
-
             if role != requested_role:
                 error_message = f"Login restricted: Please sign in as a {role.capitalize()}."
                 return Response({'detail': error_message}, status=status.HTTP_401_UNAUTHORIZED)
@@ -111,11 +110,11 @@ class RegisterViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    parser_classes = [JSONParser, FormParser, MultiPartParser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         try:
-            serializer.validate(data = request.data)
             serializer.is_valid(raise_exception=True)
             result = serializer.save()
             return Response(result, status=status.HTTP_201_CREATED)
@@ -123,8 +122,7 @@ class RegisterViewSet(viewsets.ModelViewSet):
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
+        
 # Student ViewSet
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
@@ -135,13 +133,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         user = self.request.user
         role = get_user_role(user)
 
-        if role == 'student':
-            student = Student.objects.get(user=user)
-            if student.id != serializer.instance.id:
-                raise PermissionDenied("You can only update your own student profile.")
-        elif role not in ['admin', 'mentor']:
+        if role in ['student', 'mentor']:
             raise PermissionDenied("You do not have permission to update student profiles.")
         else:
+            serializer.is_valid()
             serializer.save()
 
     def get_queryset(self):
@@ -174,13 +169,10 @@ class MentorViewSet(viewsets.ModelViewSet):
         user = self.request.user
         role = get_user_role(user)
 
-        if role == 'mentor':
-            mentor = Mentor.objects.get(user=user)
-            if mentor.id != serializer.instance.id:
-                raise PermissionDenied("You can only update your own mentor profile.")
-        elif role not in ['admin', 'student']:
+        if role in ['mentor', 'student']:
             raise PermissionDenied("You do not have permission to update mentor profiles.")
         else:
+            serializer.is_valid()
             serializer.save()
 
     def get_queryset(self):

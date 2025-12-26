@@ -22,8 +22,38 @@ class UserPasswordSerializer(serializers.Serializer):
             instance.save()
         return instance
     
+class RoleValidationMixin:
+    def validate_sem(self, value):
+        try:
+            semester = int(value)
+        except:
+            raise serializers.ValidationError("Semesters need to be a number")
+        if semester < 1 or semester > 8:
+            raise serializers.ValidationError("Semesters should be between 1 - 8")
+        return semester
 
-class RegistrationSerializer(serializers.Serializer):
+    def validate_mid(self, mentor):
+        if not mentor:
+            raise serializers.ValidationError(f"Valid mentor ID is required for students. You sent {mentor}")
+        mentor_user = User.objects.filter(username = mentor).first()
+        if mentor_user is None:
+            raise serializers.ValidationError("Mentor does not exist.")
+        obj = Mentor.objects.filter(user = mentor_user).first()
+        if not obj:
+            raise serializers.ValidationError("Mentor does not exist.")
+        return obj
+            
+    def validate_branch(self, value):
+        if not value:
+            raise serializers.ValidationError('Branch is required.')
+        return value
+    
+    def validate_contact(self, value):
+        if not value:
+            raise serializers.ValidationError("Contact is required for mentors.")
+        return value
+        
+class RegistrationSerializer(serializers.Serializer, RoleValidationMixin):
     role = serializers.ChoiceField(choices=['student', 'mentor', 'admin'])
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField()
@@ -39,33 +69,17 @@ class RegistrationSerializer(serializers.Serializer):
     def validate(self, data):
         role = data.get('role')
         if role == 'student':
-            if not data.get('branch') or not data.get('sem'):
-                raise serializers.ValidationError("Branch and semester are required for students")
-            semester = None
-            try:
-                semester = int(data.get('sem'))
-            except:
-                raise serializers.ValidationError("Semesters need to be a number")
-            if semester < 1 or semester > 8:
-                raise serializers.ValidationError("Semesters should be between 1 - 8")
-            mentor = data.get('mid')
-            if not mentor:
-                raise serializers.ValidationError(f"Valid mentor ID is required for students. You sent {mentor}")
-            mentor_user = User.objects.filter(username = mentor).first()
-            if mentor_user is None:
-                raise serializers.ValidationError("Mentor does not exist.")
-            if not Mentor.objects.filter(user = mentor_user).exists():
-                raise serializers.ValidationError("Mentor does not exist.")
+            self.validate_sem(data.get('sem', None))
+            self.validate_branch(data.get('branch', None))
+            self.validate_mid(data.get('mid', None))
+
         elif role == 'mentor':
-            if not data.get('branch'):
-                raise serializers.ValidationError('Branch is required for mentors.')
-            if not data.get('contact'):
-                raise serializers.ValidationError("Contact is required for mentors.")
-        elif role == 'admin':
-            # Additional validation if needed
-            pass
+            self.validate_branch(data.get('branch', None))
+            self.validate_contact(data.get('contact', None))
+
         else:
-            raise serializers.ValidationError("Invalid role specified.")
+            self.validate_contact(data.get('contact', None))
+
         return data
     
     def validate_password(self, value):
@@ -119,7 +133,7 @@ class RegistrationSerializer(serializers.Serializer):
                     branch=validated_data.get('branch'),
                     sem=validated_data.get('sem'),
                     status='Active',
-                    mid=Mentor.objects.get(user = User.objects.get(username = validated_data.pop("mid"))),
+                    mid=validated_data.pop("mid"),
                 )
                 
                 return StudentSerializer(student).data
@@ -161,18 +175,16 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'first_name']
 
 # Student serializer
-class StudentSerializer(serializers.ModelSerializer):
-    usn =serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source='user.email', read_only=True)
-    mentor_name = serializers.SerializerMethodField()
-    name = serializers.CharField(source='user.first_name', read_only=True)
-    mid = serializers.CharField(source='mid.user.username', read_only=True)
+class StudentSerializer(serializers.ModelSerializer, RoleValidationMixin):
+    usn = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email')
+    name = serializers.CharField(source='user.first_name')
+    mid = serializers.CharField(required=False)  # Allow 'mid' to be updated in a PATCH request
 
     class Meta:
         model = Student
-        fields = ['name', 'usn', 'branch', 'sem', 'status', 'mentor_name', 'mid',  'email']
+        fields = ['name', 'usn', 'branch', 'sem', 'status', 'mid', 'email']
 
-        
     def get_mentor_name(self, obj):
         try:
             return obj.mid.user.first_name
@@ -185,20 +197,68 @@ class StudentSerializer(serializers.ModelSerializer):
         except:
             return None
         
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['mentor_name'] = self.get_mentor_name(instance)
+        representation['mid'] = self.get_mid(instance)
+        representation['id'] = instance.id
+        return representation
+
+    def update(self, instance, validated_data):
+        """ Perform the update for the Student model """
+        # Update the user-related fields
+        try:
+            user = validated_data.pop('user')
+            # Update other fields normally
+            for attr, value in user.items():
+                setattr(instance.user, attr, value)
+
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+        except Exception as e:
+            print("Error :",e)
+            raise serializers.ValidationError("Something went wrong")
+        return instance
+
 # Mentor serializer
-class MentorSerializer(serializers.ModelSerializer):
+class MentorSerializer(serializers.ModelSerializer, RoleValidationMixin):
     mid =serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source='user.email', read_only=True)
-    name = serializers.CharField(source='user.first_name', read_only=True)
+    email = serializers.CharField(source='user.email')
+    name = serializers.CharField(source='user.first_name')
 
     class Meta:
         model = Mentor
         fields = ['name', 'mid', 'branch', 'contact', 'email']
 
-# Feedback serializer
-from rest_framework import serializers
-from .models import Feedback, Student, Mentor, Session
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = instance.id
+        return rep
+    
+    def update(self, instance, validated_data):
+        """ Perform the update for the Mentor model """
+        # Update the user-related fields
+        try:
+            if "user" in validated_data:
+                user = validated_data.pop('user')
+                # Update other fields normally
+                for attr, value in user.items():
+                    setattr(instance.user, attr, value)
 
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+        except Exception as e:
+            print("Error :",e)
+            raise serializers.ValidationError("Something went wrong")
+
+        return instance
+    
+    
+# Feedback serializer
 class FeedbackSerializer(serializers.ModelSerializer):
     sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), write_only=True)
     mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all())
@@ -216,7 +276,6 @@ class FeedbackSerializer(serializers.ModelSerializer):
         # This method customizes the representation of the instance
         representation = super().to_representation(instance)
 
-        # Add additional fields for read operations
         representation['student'] = "Anonymous" if instance.anon else instance.sid.user.first_name if instance.sid else None
         representation['usn'] = "Anonymous" if instance.anon else instance.sid.user.username if instance.sid else None
         representation['mentor_name'] = instance.mid.user.first_name if instance.mid else None
@@ -386,8 +445,6 @@ class SessionSerializer(serializers.Serializer):
         
         # Create the session, assuming you have a 'Session' model
         session = Session.objects.create(sid=sid, mid=mid, description=description, status=validated_data.get('status'), anon=validated_data.get('anon'))
-        sid.max_sessions -= 1
-        sid.save()
         return session
     
     def update(self, instance, validated_data):
