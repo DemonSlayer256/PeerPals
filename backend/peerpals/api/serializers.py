@@ -218,8 +218,7 @@ class StudentSerializer(serializers.ModelSerializer, RoleValidationMixin):
             instance.save()
 
         except Exception as e:
-            print("Error :",e)
-            raise serializers.ValidationError("Something went wrong")
+            raise serializers.ValidationError(str(e))
         return instance
 
 # Mentor serializer
@@ -252,8 +251,7 @@ class MentorSerializer(serializers.ModelSerializer, RoleValidationMixin):
             instance.save()
 
         except Exception as e:
-            print("Error :",e)
-            raise serializers.ValidationError("Something went wrong")
+            raise serializers.ValidationError(str(e))
 
         return instance
     

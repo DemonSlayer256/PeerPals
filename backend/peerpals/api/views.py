@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from .models import Student, Mentor, Feedback, Session
 from .serializers import UserPasswordSerializer, RegistrationSerializer, StudentSerializer, MentorSerializer, FeedbackSerializer, SessionSerializer, LoginSerializer
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 # Utility function to get user role
 def get_user_role(user): 
@@ -122,22 +122,62 @@ class RegisterViewSet(viewsets.ModelViewSet):
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class UpdateMixin:
+    """
+    Adds bulk + single PATCH support to a ModelViewSet.
+    Assumes the serializer supports partial updates and each item has an 'id'.
+    """
+
+    @transaction.atomic
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        role = get_user_role(user)
         
+        if role in ['student', 'mentor']:
+            raise PermissionDenied("Only admin can update details")
+        data = request.data
+
+        # Bulk update
+        if isinstance(data, list):
+            ids = [item.get('id') for item in data if 'id' in item]
+
+            if not ids:
+                return Response(
+                    {"detail": "Each item must include an 'id'."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            instances = self.get_queryset().filter(id__in=ids)
+
+            if instances.count() != len(ids):
+                existing_ids = set(instances.values_list('id', flat=True))
+                missing_ids = set(ids) - existing_ids
+                return Response(
+                    {"detail": f"Invalid IDs: {list(missing_ids)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            instance_map = {inst.id: inst for inst in instances}
+            updated_results = []
+
+            for item in data:
+                instance = instance_map[item['id']]
+                serializer = self.get_serializer(instance, data=item, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                updated_results.append(serializer.data)
+
+            return Response(updated_results, status=status.HTTP_200_OK)
+
+        # Single update (detail route)
+        return self.partial_update(request, *args, **kwargs)
+
 # Student ViewSet
-class StudentViewSet(viewsets.ModelViewSet):
+class StudentViewSet(viewsets.ModelViewSet, UpdateMixin):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor]
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        role = get_user_role(user)
-
-        if role in ['student', 'mentor']:
-            raise PermissionDenied("You do not have permission to update student profiles.")
-        else:
-            serializer.is_valid()
-            serializer.save()
 
     def get_queryset(self):
         role = get_user_role(self.request.user)
@@ -159,21 +199,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 # Mentor ViewSet
-class MentorViewSet(viewsets.ModelViewSet):
+class MentorViewSet(viewsets.ModelViewSet, UpdateMixin):
     queryset = Mentor.objects.all()
     serializer_class = MentorSerializer
     permission_classes = [permissions.IsAuthenticated]
-
-
-    def perform_update(self, serializer):
-        user = self.request.user
-        role = get_user_role(user)
-
-        if role in ['mentor', 'student']:
-            raise PermissionDenied("You do not have permission to update mentor profiles.")
-        else:
-            serializer.is_valid()
-            serializer.save()
 
     def get_queryset(self):
         role = get_user_role(self.request.user)
