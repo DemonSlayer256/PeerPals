@@ -26,7 +26,7 @@ class Student(models.Model):
         return self.session_this_month() < self.max_sessions
     
     def __str__(self):
-        return f"{self.user.first_name}"
+        return f"{self.user.username}"
 
 class Mentor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -34,7 +34,7 @@ class Mentor(models.Model):
     contact = models.CharField(max_length=20)
 
     def __str__(self):
-        return f"{self.user.first_name}"
+        return f"{self.user.username}"
 
 class Feedback(models.Model):
     sid = models.ForeignKey(Student, null=True, blank=True, on_delete=models.SET_NULL)
@@ -53,6 +53,7 @@ class Session(models.Model):
     sid = models.ForeignKey(Student, on_delete=models.CASCADE)
     mid = models.ForeignKey(Mentor, on_delete=models.CASCADE)
     date = models.DateField(null = True)
+    title = models.TextField(blank = False, null = False, default = "Null")
     description = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=20, choices = STATUS_CHOICES)  # scheduled / completed
     anon =  models.BooleanField(default=False)

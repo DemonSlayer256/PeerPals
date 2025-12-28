@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
+from datetime import date, timedelta, datetime
 
 class UserPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -153,7 +154,6 @@ class RegistrationSerializer(serializers.Serializer, RoleValidationMixin):
             # Rollback user creation if necessary
             if user and User.objects.filter(id=user.id).exists():
                 user.delete()
-            print("Registration error: ", e)
             raise serializers.ValidationError(e)
 
         
@@ -303,6 +303,7 @@ class SessionSerializer(serializers.Serializer):
     sid = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), write_only=True)
     mid = serializers.PrimaryKeyRelatedField(queryset=Mentor.objects.all(), write_only=True)
     date = serializers.DateField(required=False)
+    title = serializers.CharField(max_length = 100, required = False)
     description = serializers.CharField(allow_blank=True, required=False)
     status = serializers.ChoiceField(choices = ['accept', 'request','completed'])
     anon = serializers.BooleanField(write_only=True)
@@ -346,12 +347,10 @@ class SessionSerializer(serializers.Serializer):
         
     class Meta:
         model = Session
-        fields = ['id', 'student', 'mentor_name', 'date', 'description', 'status']
+        fields = ['id', 'title', 'student', 'mentor_name', 'date', 'description', 'status']
 
     def validate(self, attrs):
-        from datetime import date, timedelta, datetime
         instance = getattr(self, 'instance', None)
-
         student = attrs.get('sid') or getattr(instance, 'sid', None)
         mentor = attrs.get('mid') or getattr(instance, 'mid', None)
         session_date = attrs.get('date')
@@ -360,13 +359,21 @@ class SessionSerializer(serializers.Serializer):
         if isinstance(session_date, datetime):
             session_date = session_date.date()
 
+        status = self.validate_status(attrs.get('status')) 
+        if status == 'request' and not attrs.get('title', None):
+            raise serializers.ValidationError("Title cannot be empty. Please enter a value")
+        
         if instance:
-            if session_date:
+            if session_date and status == 'accept':
                 limit_date = date.today() + timedelta(days=30)
                 if session_date > limit_date:
                     raise serializers.ValidationError(
                         "The session date cannot be more than one month from today."
                     )
+                if session_date < date.today():
+                    raise serializers.ValidationError("Sessions cannot be set in the past")
+            else:
+                raise serializers.ValidationError("Cannot accept a session without setting a date.")
             return attrs
 
         if student.mid != mentor:
@@ -430,7 +437,7 @@ class SessionSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     f"Invalid status transition: {current_status} → {new_status}"
                 )
-
+                
         return new_status
 
     
@@ -439,14 +446,14 @@ class SessionSerializer(serializers.Serializer):
         sid = validated_data.pop('sid')
         mid = validated_data.pop('mid')
         description = validated_data.get('description')
+        title = validated_data.pop('title')
 
         
         # Create the session, assuming you have a 'Session' model
-        session = Session.objects.create(sid=sid, mid=mid, description=description, status=validated_data.get('status'), anon=validated_data.get('anon'))
+        session = Session.objects.create(sid=sid, mid=mid, title = title,description=description, status=validated_data.get('status'), anon=validated_data.get('anon'))
         return session
     
     def update(self, instance, validated_data):
-        print(instance.status, validated_data.get('status'))
         instance.status = validated_data.get('status', instance.status)
         instance.date = validated_data.get('date', instance.date)
         instance.save()

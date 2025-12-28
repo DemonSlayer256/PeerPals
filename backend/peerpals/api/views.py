@@ -267,11 +267,12 @@ class SessionViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if get_user_role(self.request.user) == 'student':
+            # Student will only send description, title and anon
             sent_data = self.request.data.copy()
             student = Student.objects.get(user=self.request.user)
             sent_data['sid'] = student.id
             sent_data['status'] = 'request'
-            sent_data['mid'] = student.mid.id 
+            sent_data['mid'] = student.mid.id
             serializer = self.get_serializer(data=sent_data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
