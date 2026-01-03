@@ -83,15 +83,3 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-default-key-for-dev')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-
-# Database Configuration
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'peerpals_db',
-        'USER': 'admin',
-        'PASSWORD': os.environ.get('DB_PASSWORD'), # Retrieved from environment
-        'HOST': 'localhost',
-        'PORT': '3306',
-    }
-}
