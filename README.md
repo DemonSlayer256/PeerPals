@@ -63,3 +63,37 @@ User Management: Onboard new students and faculty mentors.
 Oversight: Monitor all booked sessions and their current statuses in real-time.
 
 ---
+
+---
+
+## 🌐 Deployment & Security (Production Ready)
+
+Before moving to a production environment, ensure the following security configurations are met:
+
+### 1. Environment Variables
+To keep sensitive data secure, move your database credentials and secret keys out of the source code.
+
+* **Disable Debug Mode:** Set `DEBUG = False` in `settings.py`.
+* **Secure Passwords:** Use environment variables for the database password and Secret Key.
+
+**Example `settings.py` update:**
+```python
+import os
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-default-key-for-dev')
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+
+# Database Configuration
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'peerpals_db',
+        'USER': 'admin',
+        'PASSWORD': os.environ.get('DB_PASSWORD'), # Retrieved from environment
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
