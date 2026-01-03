@@ -51,7 +51,7 @@ cd frontend
 npm install
 npm start
 ```
-⚙️ Backend Setup
+### ⚙️ Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -64,9 +64,7 @@ Oversight: Monitor all booked sessions and their current statuses in real-time.
 
 ---
 
----
-
-## 🌐 Deployment & Security (Production Ready)
+## 🌐 Deployment & Security 
 
 Before moving to a production environment, ensure the following security configurations are met:
 
