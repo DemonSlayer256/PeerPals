@@ -1,10 +1,17 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 
 # Create your models here.
+class User(AbstractUser):
+    is_verified = models.BooleanField(default = False)
+    
+    class Meta:
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
 
 class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     branch = models.CharField(max_length=50)
     sem = models.IntegerField()
     status = models.CharField(max_length=20)
@@ -29,7 +36,7 @@ class Student(models.Model):
         return f"{self.user.username}"
 
 class Mentor(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     branch = models.CharField(max_length=50)
     contact = models.CharField(max_length=20)
 
@@ -67,7 +74,7 @@ class UserProfile(models.Model):
         ('mentor', 'Mentor'),
         ('student', 'Student'),
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
 
     def __str__(self):
