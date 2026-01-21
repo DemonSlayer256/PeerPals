@@ -1,7 +1,66 @@
+# Environment variables and virtual environments
 /env
-/backend/peerpals/api/__pycache__/
-/backend/peerpals/api/migrations/__pycache__/
-/backend/peerpals/peerpals/__pycache__/
-script.sh
-/backend/peerpals/db.sqlite3
 .venv
+env/
+venv/
+.env
+.env.local
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+/backend/peerpals/db.sqlite3
+/backend/peerpals/*.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+script.sh
+temp.py
+temp.txt
+
+# Node/Frontend
+node_modules/
+/frontend/node_modules/
+/frontend/build/
+/frontend/.env
+/frontend/.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
