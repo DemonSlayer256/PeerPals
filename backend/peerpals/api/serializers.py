@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from .models import Student, Mentor, Feedback, Session, UserProfile
 from datetime import date, timedelta, datetime
+
+User = get_user_model()
 
 class UserPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, required=True)
@@ -172,7 +173,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name']
+        fields = ['username', 'email', 'first_name', 'is_verified']
 
 # Student serializer
 class StudentSerializer(serializers.ModelSerializer, RoleValidationMixin):
@@ -202,6 +203,7 @@ class StudentSerializer(serializers.ModelSerializer, RoleValidationMixin):
         representation['mentor_name'] = self.get_mentor_name(instance)
         representation['mid'] = self.get_mid(instance)
         representation['id'] = instance.id
+        representation['is_verified'] = instance.user.is_verified
         return representation
 
     def update(self, instance, validated_data):
@@ -234,6 +236,8 @@ class MentorSerializer(serializers.ModelSerializer, RoleValidationMixin):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep['id'] = instance.id
+        rep['is_verified'] = instance.user.is_verified
+        rep['role'] = instance.user.profile.role
         return rep
     
     def update(self, instance, validated_data):

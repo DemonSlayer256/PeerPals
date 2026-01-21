@@ -6,15 +6,80 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
 from .models import Student, Mentor, Feedback, Session
 from .serializers import UserPasswordSerializer, RegistrationSerializer, StudentSerializer, MentorSerializer, FeedbackSerializer, SessionSerializer, LoginSerializer
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.conf import settings
+from django.core.signing import dumps, BadSignature, SignatureExpired, loads
+
+User = get_user_model()
+
+#Utility function for generation of verification tokens
+def token_gen(user):
+    username = None
+    for i in ['usn', 'mid']:
+        if i in user:
+            username = user[i]
+            break
+    payload = {"username" : username, "verified" : user['is_verified']}
+    return dumps(payload, salt = 'email-verification')
+
+def verify_email_token(token, max_age=3600):
+    try:
+        data = loads(token, salt="email-verification", max_age=max_age)
+    except (BadSignature, SignatureExpired):
+        return None
+
+    username = data.get("username")
+    verified_at_issue = data.get("verified")
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return None
+
+    # Invalidate tokens issued before verification
+    if user.is_verified != verified_at_issue:
+        return None
+
+    return user
+
+
+#Utility function for sending verification mails
+def send_verif_mail(user, request):
+    token = token_gen(user)
+    verification_link = f"{request.scheme}://{request.get_host()}{reverse('verify_email', args=[token])}"
+    send_mail(
+        subject="Welcome to PeerPals 👋 Let's verify your email",
+        message=(
+            "Hey there! 👋\n\n"
+            "Welcome to PeerPals — we're excited to have you on board!\n\n"
+            "Before you get started, please take a quick moment to verify your email "
+            "by clicking the link below:\n\n"
+            f"{verification_link}\n\n"
+            "This helps us keep your account secure and makes sure you don't miss "
+            "any important updates.\n\n"
+            "If you didn't sign up for PeerPals, you can safely ignore this email.\n\n"
+            "See you inside!\n"
+            "— The PeerPals Team 🚀"
+        ),
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=[user["email"]],
+        fail_silently=False,
+    )
+
 # Utility function to get user role
 def get_user_role(user): 
     if hasattr(user, 'profile'):
         return user.profile.role
     return None
 
+class IsEmailVerified(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return getattr(request.user, 'is_verified', False)
+    
 class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'DELETE':
@@ -48,6 +113,26 @@ class IsSelf(permissions.BasePermission):
 
         # Otherwise, users can only edit their own data
         return obj == request.user
+
+class VerifyEmailAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, token):
+        user = verify_email_token(token)
+
+        if not user:
+            return Response(
+                {"detail": "Verification link is invalid or expired."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
+
+        return Response(
+            {"detail": "Email verified successfully!"},
+            status=status.HTTP_200_OK
+        )
 
 class LoginAPIView(APIView):
     permission_classes = [permissions.AllowAny, IsAdminOrReadOnly]
@@ -117,10 +202,12 @@ class RegisterViewSet(viewsets.ModelViewSet):
         try:
             serializer.is_valid(raise_exception=True)
             result = serializer.save()
+            send_verif_mail(result, request)
             return Response(result, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'errors': e.detail}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print(e)
             return Response({'errors': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class UpdateMixin:
@@ -177,7 +264,7 @@ class UpdateMixin:
 class StudentViewSet(viewsets.ModelViewSet, UpdateMixin):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrStudentOrMentor, IsEmailVerified]
 
     def get_queryset(self):
         role = get_user_role(self.request.user)
@@ -194,7 +281,6 @@ class StudentViewSet(viewsets.ModelViewSet, UpdateMixin):
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        print(f"DEBUG: Queryset Count is {queryset.count()}")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -202,7 +288,7 @@ class StudentViewSet(viewsets.ModelViewSet, UpdateMixin):
 class MentorViewSet(viewsets.ModelViewSet, UpdateMixin):
     queryset = Mentor.objects.all()
     serializer_class = MentorSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
     def get_queryset(self):
         role = get_user_role(self.request.user)
@@ -227,7 +313,7 @@ class MentorViewSet(viewsets.ModelViewSet, UpdateMixin):
 class FeedbackViewSet(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrReadOnly, IsEmailVerified]
 
     # No role restriction, open to all authenticated users
     def create(self, serializer):
@@ -263,7 +349,7 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = Session.objects.all()
     serializer_class = SessionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsEmailVerified]
 
     def create(self, request, *args, **kwargs):
         if get_user_role(self.request.user) == 'student':
